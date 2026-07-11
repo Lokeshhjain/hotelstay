@@ -1,0 +1,27 @@
+@HotelStay.Api_HostAddress = http://localhost:5188
+
+# Search hotels
+GET {{HotelStay.Api_HostAddress}}/hotels/search?destination=London&checkIn=2026-08-01&checkOut=2026-08-05&roomType=Deluxe
+Accept: application/json
+
+###
+
+# Reserve a hotel
+POST {{HotelStay.Api_HostAddress}}/hotels/reserve
+Content-Type: application/json
+
+{
+  "TravellerName": "John Doe",
+  "Destination": "London",
+  "DocumentType": "Passport",
+  "DocumentNumber": "A12345678",
+  "SelectedOfferId": "offer-1"
+}
+
+###
+
+# Lookup reservation (replace {reference} with actual value)
+GET {{HotelStay.Api_HostAddress}}/hotels/reservation/REPLACE_WITH_REFERENCE
+Accept: application/json
+
+###
