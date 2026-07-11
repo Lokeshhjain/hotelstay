@@ -1,0 +1,23 @@
+<section class="lookup-panel">
+  <div class="mb-3">
+    <div class="section-label mb-2">Lookup</div>
+    <h2 class="h3 mb-1">Retrieve a reservation</h2>
+    <p class="soft-muted mb-0">Use the reservation reference from confirmation.</p>
+  </div>
+
+  <label class="form-label fw-semibold">Reservation reference</label>
+  <div class="input-group mb-3">
+    <input class="form-control focus-ring" [(ngModel)]="reference" placeholder="RSV-XXXXXXXX" />
+    <button class="btn btn-outline-dark" (click)="onLookup()">Lookup</button>
+  </div>
+
+  <div *ngIf="result; else emptyState" class="lookup-result">
+    <pre class="mb-0">{{ result | json }}</pre>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="empty-state text-center py-4">
+      <p class="soft-muted mb-0">No reservation loaded yet.</p>
+    </div>
+  </ng-template>
+</section>

@@ -1,0 +1,40 @@
+<section class="reservation-panel">
+  <div class="mb-3">
+    <div class="section-label mb-2">Reservation</div>
+    <h2 class="h3 mb-1">Confirm the selected offer</h2>
+    <p class="soft-muted mb-0">The backend re-checks document rules before creating a booking.</p>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 col-md-6">
+      <label class="form-label fw-semibold">Traveller name</label>
+      <input class="form-control focus-ring" [(ngModel)]="travellerName" placeholder="Alex Johnson" />
+    </div>
+    <div class="col-12 col-md-6">
+      <label class="form-label fw-semibold">Destination</label>
+      <input class="form-control focus-ring" [(ngModel)]="destination" placeholder="Delhi" />
+    </div>
+    <div class="col-12 col-md-6">
+      <label class="form-label fw-semibold">Document type</label>
+      <select class="form-select focus-ring" [(ngModel)]="documentType">
+        <option value="Passport">Passport</option>
+        <option value="NationalId">National ID</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-6">
+      <label class="form-label fw-semibold">Document number</label>
+      <input class="form-control focus-ring" [(ngModel)]="documentNumber" placeholder="ID or passport number" />
+    </div>
+    <div class="col-12">
+      <label class="form-label fw-semibold">Selected offer ID</label>
+      <input class="form-control focus-ring" [(ngModel)]="selectedOfferId" placeholder="Choose a result to auto-fill this" />
+    </div>
+    <div class="col-12 d-grid d-md-flex justify-content-md-end">
+      <button class="btn btn-dark px-4" (click)="submit()">Reserve now</button>
+    </div>
+  </div>
+
+  <div class="message mt-3" [class.text-success]="message.startsWith('Reservation confirmed')" [class.text-danger]="message.startsWith('Reservation failed') || message.toLowerCase().includes('invalid')">
+    {{ message }}
+  </div>
+</section>

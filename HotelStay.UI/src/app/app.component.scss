@@ -1,0 +1,44 @@
+:host {
+  display: block;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -4rem -5rem auto;
+  width: 14rem;
+  height: 14rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(180, 83, 9, 0.18), transparent 68%);
+  pointer-events: none;
+}
+
+.hero-stats {
+  max-width: 18rem;
+  margin-left: auto;
+}
+
+.stat-card {
+  border-radius: 1.25rem;
+  padding: 1rem 1.1rem;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(29, 36, 51, 0.1);
+}
+
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--hs-text);
+}
+
+.stat-label {
+  margin-top: 0.35rem;
+  color: var(--hs-muted);
+  font-size: 0.9rem;
+}

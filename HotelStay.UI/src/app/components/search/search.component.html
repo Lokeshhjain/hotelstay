@@ -1,0 +1,37 @@
+<section class="search-panel">
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-2 mb-3">
+    <div>
+      <div class="section-label mb-2">Search</div>
+      <h2 class="h3 mb-1">Find available rooms</h2>
+      <p class="soft-muted mb-0">Compare provider offers in a normalized list.</p>
+    </div>
+    <span class="badge text-bg-light border align-self-start align-self-lg-center">Bootstrap layout</span>
+  </div>
+
+  <div class="row g-3 align-items-end">
+    <div class="col-12 col-md-6 col-lg-4">
+      <label class="form-label fw-semibold">Destination</label>
+      <input class="form-control focus-ring" [(ngModel)]="destination" placeholder="Delhi, Paris, Tokyo" />
+    </div>
+    <div class="col-6 col-lg-2">
+      <label class="form-label fw-semibold">Check in</label>
+      <input class="form-control focus-ring" type="date" [(ngModel)]="checkIn" />
+    </div>
+    <div class="col-6 col-lg-2">
+      <label class="form-label fw-semibold">Check out</label>
+      <input class="form-control focus-ring" type="date" [(ngModel)]="checkOut" />
+    </div>
+    <div class="col-12 col-md-6 col-lg-2">
+      <label class="form-label fw-semibold">Room type</label>
+      <select class="form-select focus-ring" [(ngModel)]="roomType">
+        <option value="">Any</option>
+        <option value="standard">Standard</option>
+        <option value="deluxe">Deluxe</option>
+        <option value="suite">Suite</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-6 col-lg-2 d-grid">
+      <button class="btn btn-dark btn-lg" (click)="onSearch()">Search stays</button>
+    </div>
+  </div>
+</section>

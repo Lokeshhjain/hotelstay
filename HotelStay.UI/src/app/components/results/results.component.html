@@ -1,0 +1,56 @@
+<section class="results-panel">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2 mb-3">
+    <div>
+      <div class="section-label mb-2">Results</div>
+      <h2 class="h3 mb-1">Normalized hotel offers</h2>
+      <p class="soft-muted mb-0">Unavailable BudgetNests rooms are hidden automatically.</p>
+    </div>
+    <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis border border-success-subtle">
+      Sorts by total price
+    </span>
+  </div>
+
+  <div *ngIf="results.length === 0" class="empty-state text-center py-5">
+    <div class="display-6 mb-2">No results yet</div>
+    <p class="soft-muted mb-0">Run a search to compare stays from both providers.</p>
+  </div>
+
+  <div class="row g-3" *ngIf="results.length > 0">
+    <div class="col-12 col-lg-6" *ngFor="let r of results">
+      <article
+        class="offer-card h-100"
+        [class.selected]="r.id === selectedId"
+        (click)="selectOffer(r.id, r)"
+      >
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+          <div>
+            <div class="provider-badge">{{ r.provider || r.ProviderName }}</div>
+            <h3 class="h5 mb-1 mt-2">{{ r.roomType || r.RoomType || r.roomTypeCode }} room</h3>
+            <div class="text-body-secondary small">Offer ID: {{ r.id || r.Id }}</div>
+          </div>
+          <span class="price-pill">₹ {{ r.totalStayPrice || r.TotalStayPrice }}</span>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="metric-label">Per night</div>
+            <div class="metric-value">₹ {{ r.perNightRate || r.PerNightRate }}</div>
+          </div>
+          <div class="col-6">
+            <div class="metric-label">Total stay</div>
+            <div class="metric-value">₹ {{ r.totalStayPrice || r.TotalStayPrice }}</div>
+          </div>
+          <div class="col-12">
+            <div class="metric-label">Cancellation policy</div>
+            <div class="metric-value">{{ r.cancellationPolicy || r.CancellationPolicy }}</div>
+          </div>
+        </div>
+
+        <div class="mt-3 d-flex justify-content-between align-items-center">
+          <span class="text-body-secondary small">Tap to choose this stay</span>
+          <button class="btn btn-outline-dark btn-sm" type="button">Select</button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
