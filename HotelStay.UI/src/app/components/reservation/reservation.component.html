@@ -9,10 +9,12 @@
     <div class="col-12 col-md-6">
       <label class="form-label fw-semibold">Traveller name</label>
       <input class="form-control focus-ring" [(ngModel)]="travellerName" placeholder="Alex Johnson" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && !travellerName.trim()">Traveller name is required.</div>
     </div>
     <div class="col-12 col-md-6">
       <label class="form-label fw-semibold">Destination</label>
       <input class="form-control focus-ring" [(ngModel)]="destination" placeholder="Delhi" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && !destination.trim()">Destination is required.</div>
     </div>
     <div class="col-12 col-md-6">
       <label class="form-label fw-semibold">Document type</label>
@@ -20,14 +22,17 @@
         <option value="Passport">Passport</option>
         <option value="NationalId">National ID</option>
       </select>
+      <div class="invalid-feedback d-block" *ngIf="submitted && !documentType.trim()">Document type is required.</div>
     </div>
     <div class="col-12 col-md-6">
       <label class="form-label fw-semibold">Document number</label>
       <input class="form-control focus-ring" [(ngModel)]="documentNumber" placeholder="ID or passport number" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && !documentNumber.trim()">Document number is required.</div>
     </div>
     <div class="col-12">
       <label class="form-label fw-semibold">Selected offer ID</label>
       <input class="form-control focus-ring" [(ngModel)]="selectedOfferId" placeholder="Choose a result to auto-fill this" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && !selectedOfferId.trim()">Selected offer ID is required.</div>
     </div>
     <div class="col-12 d-grid d-md-flex justify-content-md-end">
       <button class="btn btn-dark px-4" (click)="submit()">Reserve now</button>

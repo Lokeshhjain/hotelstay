@@ -6,6 +6,7 @@ using HotelStay.Domain.ValueObjects;
 using HotelStay.Infrastructure;
 using HotelStay.Infrastructure.Providers;
 using HotelStay.Infrastructure.Repositories;
+using HotelStay.Infrastructure.Stores;
 
 namespace HotelStay.UnitTests;
 
@@ -72,9 +73,34 @@ public sealed class HotelAvailabilityServiceTests
     }
 
     [Fact]
+    public async Task SearchHotelsAsync_FiltersByRequestedRoomType()
+    {
+        var service = CreateService();
+
+        var offers = await service.SearchHotelsAsync(new SearchCriteria("Delhi", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), "suite"));
+
+        Assert.Single(offers);
+        Assert.Equal("budget-2", offers[0].Id);
+        Assert.Equal(RoomType.Suite, offers[0].RoomType);
+    }
+
+    [Fact]
+    public async Task SearchHotelsAsync_ThrowsForInvalidRequestedRoomType()
+    {
+        var service = CreateService();
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SearchHotelsAsync(new SearchCriteria("Delhi", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), "penthouse")));
+
+        Assert.Contains("Room type must be Standard, Deluxe, or Suite.", exception.Message);
+    }
+
+    [Fact]
     public async Task ReserveHotelAsync_CreatesReservationForValidDocument()
     {
         var service = CreateService();
+
+        await service.SearchHotelsAsync(new SearchCriteria("Delhi", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), null));
 
         var reservation = await service.ReserveHotelAsync(new ReservationRequest(
             "Alex",
@@ -87,7 +113,7 @@ public sealed class HotelAvailabilityServiceTests
         Assert.Equal("Alex", reservation.TravellerName);
         Assert.Equal("PremierStays", reservation.Provider);
         Assert.Equal("premier-1", reservation.SelectedOfferId);
-        Assert.Equal(120m, reservation.TotalPrice);
+        Assert.Equal(360m, reservation.TotalPrice);
         Assert.Equal("Document accepted.", reservation.ValidationOutcome);
     }
 
@@ -111,6 +137,7 @@ public sealed class HotelAvailabilityServiceTests
     public async Task GetReservationAsync_ReturnsStoredReservation()
     {
         var service = CreateService();
+        await service.SearchHotelsAsync(new SearchCriteria("Delhi", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), null));
         var reservation = await service.ReserveHotelAsync(new ReservationRequest(
             "Alex",
             "Delhi",
@@ -130,12 +157,13 @@ public sealed class HotelAvailabilityServiceTests
         var dataContext = new InMemoryDataContext();
         var destinationSource = new DestinationCategorySource(dataContext);
         var documentValidationService = new HotelDocumentValidationService(destinationSource);
+        var offerCatalog = new InMemoryOfferCatalog();
         var providers = new IHotelProvider[]
         {
             new PremierStaysProvider(dataContext),
             new BudgetNestsProvider(dataContext)
         };
 
-        return new HotelAvailabilityService(providers, reservationStore ?? new InMemoryReservationStore(), documentValidationService);
+        return new HotelAvailabilityService(providers, reservationStore ?? new InMemoryReservationStore(), documentValidationService, offerCatalog);
     }
 }

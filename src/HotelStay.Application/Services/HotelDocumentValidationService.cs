@@ -5,7 +5,7 @@ using HotelStay.Domain.ValueObjects;
 
 namespace HotelStay.Application.Services;
 
-public sealed class HotelDocumentValidationService
+public sealed class HotelDocumentValidationService : IHotelDocumentValidationService
 {
     private readonly IDestinationCategorySource _destinationCategorySource;
 

@@ -44,4 +44,20 @@ public static class HotelBusinessRules
             _ => RoomType.Standard
         };
     }
+
+    public static bool TryParseRequestedRoomType(string? roomType, out RoomType parsedRoomType)
+    {
+        var normalized = roomType?.Trim().ToLowerInvariant();
+
+        parsedRoomType = normalized switch
+        {
+            null or "" => default,
+            "standard" => RoomType.Standard,
+            "deluxe" => RoomType.Deluxe,
+            "suite" => RoomType.Suite,
+            _ => default
+        };
+
+        return normalized is null or "" || normalized is "standard" or "deluxe" or "suite";
+    }
 }

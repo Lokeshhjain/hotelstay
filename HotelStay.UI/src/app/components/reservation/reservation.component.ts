@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   standalone: true,
   selector: 'app-reservation',
-  imports: [FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './reservation.component.html',
   styleUrls: ['./reservation.component.css']
 })
@@ -16,6 +17,7 @@ export class ReservationComponent implements OnInit, OnDestroy {
   documentNumber = '';
   selectedOfferId = '';
   message = '';
+  submitted = false;
 
   private offerSelectedHandler = (e: any) => {
     const id = e.detail?.offerId as string | undefined;
@@ -37,6 +39,17 @@ export class ReservationComponent implements OnInit, OnDestroy {
   }
 
   submit() {
+    this.submitted = true;
+    this.message = '';
+
+    if (!this.travellerName.trim()
+      || !this.destination.trim()
+      || !this.documentType.trim()
+      || !this.documentNumber.trim()
+      || !this.selectedOfferId.trim()) {
+      return;
+    }
+
     const payload = {
       travellerName: this.travellerName,
       destination: this.destination,
@@ -55,4 +68,5 @@ export class ReservationComponent implements OnInit, OnDestroy {
       }
     });
   }
+
 }
