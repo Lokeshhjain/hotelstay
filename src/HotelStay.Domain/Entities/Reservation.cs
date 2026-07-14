@@ -15,5 +15,6 @@ public sealed class Reservation
     public DocumentType DocumentType { get; init; }
     public string DocumentNumber { get; init; } = string.Empty;
     public string SelectedOfferId { get; init; } = string.Empty;
+    public HotelOffer? OfferSnapshot { get; init; }
     public string ValidationOutcome { get; init; } = "Accepted";
 }

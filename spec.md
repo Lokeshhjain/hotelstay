@@ -12,6 +12,11 @@ This specification refines the approved requirement analysis for the SkyRoute Ho
 - Ensure the solution runs fully offline using deterministic local stubs.
 - Provide clear validation behavior across the client, API, and application layers.
 - Preserve the approved business rules and scope without introducing unsupported requirements.
+- Ensure reservation confirmation details are returned in a structured, traveller-friendly form.
+- Keep search results aligned to the traveller’s selected destination, stay dates, and optional room type.
+- Keep the API composition root thin and organize endpoints by feature rather than embedding all workflow logic in the startup entry point.
+- Preserve explicit normalization and mapping layers so provider-specific transformations remain testable and maintainable.
+- Capture a stable reservation snapshot at booking time so confirmation and retrieval remain independent of subsequent catalog re-querying.
 
 ## 3. Solution Architecture
 
@@ -33,12 +38,14 @@ This structure is intended to keep the business flow understandable, testable, a
 
 - src/HotelStay.Api
   - Endpoints and HTTP request handling
-  - Request validation and response shaping
+  - Feature-based endpoint grouping and request validation
+  - Response shaping and error translation
 - src/HotelStay.Application
   - Search orchestration
   - Reservation orchestration
   - Validation coordination
   - Provider coordination
+  - Offer normalization and reservation snapshot orchestration
 - src/HotelStay.Domain
   - Core business concepts
   - Domain rules and invariants
@@ -46,11 +53,12 @@ This structure is intended to keep the business flow understandable, testable, a
 - src/HotelStay.Infrastructure
   - Provider adapters for PremierStays and BudgetNests
   - Deterministic stub implementations
-  - In-memory reservation store for the current scope
+  - Dedicated provider mappers and normalization logic
+  - Concurrency-safe in-memory reservation storage for the current scope
 
 #### Frontend
 
-- src/HotelStay.Web
+- src/HotelStay.UI
   - Search screen
   - Results screen
   - Reservation screen
@@ -73,7 +81,7 @@ This structure is intended to keep the business flow understandable, testable, a
 
 | Layer | Responsibility |
 | --- | --- |
-| Angular Client | Collects traveller input, displays search results, captures reservation details, and presents confirmation information. |
+| Angular Client | Collects traveller input, displays search results, captures reservation details, presents confirmation information, and coordinates UI state through shared services and reactive forms. |
 | API Layer | Exposes search, reservation, and reservation lookup endpoints and translates HTTP concerns into application operations. |
 | Application Layer | Coordinates search and reservation workflows, applies validation rules, and orchestrates provider queries. |
 | Domain Layer | Defines core concepts, business rules, and validation semantics for search, pricing, room types, documents, and reservations. |
@@ -89,10 +97,10 @@ The domain model will be centered on the business concepts required to support s
 | HotelOffer | Entity | Represents a normalized room offer returned to the traveller. |
 | ProviderResult | Value Object or Aggregate Boundary | Represents provider-specific data received from a provider before normalization. |
 | RoomType | Enum | Defines the unified room types: Standard, Deluxe, Suite. |
-| CancellationPolicy | Enum or Value Object | Represents the normalized cancellation policy for a room offer. |
+| CancellationPolicy | Enum or Value Object | Represents the normalized cancellation policy as a business value describing the number of hours before check-in during which cancellation remains allowed. |
 | DestinationCategory | Enum | Distinguishes domestic and international destinations for document validation. |
 | DocumentType | Enum | Represents the accepted document options for reservation validation. |
-| Reservation | Entity | Represents a confirmed reservation with traveller data, offer details, and validation state. |
+| Reservation | Entity | Represents a confirmed reservation with traveller data, an offer snapshot, and validation state. |
 | ReservationReference | Value Object | Encapsulates the unique reservation identifier returned to the traveller. |
 | ReservationRequest | Value Object | Represents the traveller-provided reservation details submitted for validation and confirmation. |
 | DocumentValidationResult | Value Object | Records whether a submitted document satisfies the destination-based validation rule. |
@@ -114,6 +122,7 @@ The domain model will be centered on the business concepts required to support s
 5. The application layer normalizes each provider result into the shared offer model.
 6. BudgetNests results marked as unavailable are excluded from the traveller-facing list.
 7. The normalized results are returned to the frontend for display.
+8. The returned result set remains scoped to the supplied destination, check-in date, check-out date, and optional room type so the traveller sees results relevant to the current search context.
 
 ### 5.2 Reservation Flow
 
@@ -122,8 +131,9 @@ The domain model will be centered on the business concepts required to support s
 3. The API layer forwards the request to the application layer.
 4. The application validates the destination and submitted document.
 5. If the document is valid, the reservation is accepted and a reservation reference is generated.
-6. The reservation is returned to the traveller in a confirmation view.
-7. The traveller can retrieve reservation details later using the reservation reference.
+6. The selected offer details are captured as a reservation snapshot and persisted as part of the reservation record.
+7. The reservation is returned to the traveller in a confirmation view that includes the reservation reference, provider, total price, and cancellation policy.
+8. The traveller can retrieve reservation details later using the reservation reference without needing to re-query the catalog.
 
 ## 6. API Design
 
@@ -135,7 +145,7 @@ The API design should remain aligned with the approved endpoints and support the
 | --- | --- |
 | Method | GET |
 | Route | /hotels/search |
-| Purpose | Query both providers, filter unavailable rooms, normalize results, and return a unified list. |
+| Purpose | Query both providers, filter unavailable rooms, normalize results, and return a unified list that reflects the selected destination, stay dates, and optional room type. |
 | Required Query Parameters | destination, checkIn, checkOut |
 | Optional Query Parameter | roomType |
 | Success Status | 200 |
@@ -157,6 +167,7 @@ The API design should remain aligned with the approved endpoints and support the
 - per-night rate
 - total stay price
 - cancellation policy
+- relevance to the current search criteria
 
 ### 6.2 Reserve Hotel
 
@@ -183,6 +194,7 @@ The API design should remain aligned with the approved endpoints and support the
 - provider
 - totalPrice
 - cancellationPolicy
+- reservationSnapshot
 
 ### 6.3 Retrieve Reservation
 
@@ -222,7 +234,16 @@ The solution will define a provider abstraction that allows multiple hotel provi
 | Provider | Response Shape | Availability Behaviour | Cancellation Policy Behaviour |
 | --- | --- | --- | --- |
 | PremierStays | PascalCase JSON | Always returns available rooms | FreeCancellation up to 48 hours before check-in, or NonRefundable |
-| BudgetNests | snake_case JSON | May return unavailable rooms | Flexible up to 24 hours before check-in, or NonRefundable |
+| BudgetNests | snake_case JSON | May return unavailable rooms; filter out rooms with `available: false` | Flexible up to 24 hours before check-in, or NonRefundable |
+
+### 7.2a Destination Category Constraints
+
+- Domestic destinations shall be represented by at least 2 known cities.
+- International destinations shall be represented by at least 3 known cities.
+- Each provider shall determine the destination category by matching the search criteria destination against known domestic and international city lists.
+- When a destination matches a domestic city, PremierStays returns available rooms and BudgetNests may return unavailable rooms (which shall be filtered out).
+- When a destination matches an international city, both providers return only available rooms.
+- Providers filter their catalog based on destination category to ensure search results respect the traveller's selected destination.
 
 ### 7.3 Normalization and Mapping Strategy
 
@@ -231,6 +252,7 @@ The solution will define a provider abstraction that allows multiple hotel provi
 - Per-night pricing will be converted into a consistent representation of total stay price based on the stay duration.
 - Cancellation policies will be normalized into a common contract for display and downstream handling.
 - The normalization layer will be responsible for translation and not for business decision-making beyond mapping the provider response into the shared model.
+- Mapping and normalization should be handled by dedicated mapper classes or adapters rather than embedded directly within orchestration services.
 
 ### 7.4 Future Provider Extension
 
@@ -242,7 +264,7 @@ Validation must be applied consistently at each boundary to preserve data qualit
 
 ### 8.1 Client Validation
 
-The Angular client will validate the reservation form before submission. This includes:
+The Angular client will validate the reservation form before submission using reactive forms and explicit field-level validation. This includes:
 
 - Required traveller name
 - Required document type
@@ -268,6 +290,33 @@ The application layer will coordinate validation requests, while the domain laye
 - Document requirement evaluation
 - Reservation acceptance or rejection
 - Unavailable room handling
+
+### 8.4 Document Validation Rules (Destination-Specific)
+
+Identity document validation is destination-specific and must be enforced consistently on both client and server:
+
+#### Domestic Destinations
+- **Accepted Document:** National ID only
+- **Rejected Document:** Passport
+- **Message on Rejection:** "Domestic destinations require a National ID."
+
+#### International Destinations
+- **Accepted Document:** Passport only
+- **Rejected Document:** National ID
+- **Message on Rejection:** "International destinations require a Passport."
+
+#### Validation Implementation
+1. **Client-Side (Angular):** The reservation form must:
+   - Determine the destination category by comparing the destination against known domestic and international city lists
+   - Dynamically update the document type dropdown to show only the valid choice for that destination
+   - Display a contextual hint indicating which document is required
+   - Prevent form submission if the wrong document is selected
+   - Surface validation errors before sending the request
+
+2. **Server-Side (.NET):** The reservation endpoint must:
+   - Re-validate the submitted document against the destination
+   - Return HTTP 422 (Unprocessable Entity) with a meaningful error message if validation fails
+   - Never create a reservation with an invalid document
 
 ## 9. Error Handling Strategy
 
@@ -302,6 +351,8 @@ Key elements:
 Expected behaviour:
 - Missing required values should be prevented or clearly reported.
 - The user should be able to review the returned normalized offers.
+- The UI should expose clear loading, empty, and error states while search requests are in progress or when no matching results are available.
+- Shared UI state should be coordinated through explicit state services or equivalent state containers rather than browser-window custom events.
 
 ### 10.2 Results Screen
 
@@ -319,6 +370,7 @@ Key elements:
 Expected behaviour:
 - Unavailable BudgetNests rooms must not appear.
 - Results should show a consistent, unified presentation regardless of provider origin.
+- The UI should maintain a shared state for the selected offer so the reservation form can be populated consistently from the chosen result.
 
 ### 10.3 Reservation Screen
 
@@ -335,6 +387,7 @@ Key elements:
 Expected behaviour:
 - Client-side validation should prevent invalid submission.
 - Server-side validation must re-check the document requirement before allowing reservation creation.
+- The reservation screen should communicate submission progress and surface validation feedback clearly while preserving the current form values.
 
 ### 10.4 Confirmation Screen
 
@@ -350,6 +403,17 @@ Key elements:
 
 Expected behaviour:
 - The traveller should be able to view the reservation reference and understand the result of the reservation attempt.
+- The confirmation view should present the reservation reference, provider, total price, and cancellation policy in a consistent layout.
+
+### 10.5 State Management and Feedback Handling
+
+Purpose:
+- Keep the frontend experience predictable as the traveller moves from search to confirmation.
+
+Key considerations:
+- Shared UI state should track the current search criteria, normalized results, selected offer, reservation form values, and confirmation outcome.
+- The UI should surface loading, empty, success, and error states for search and reservation interactions.
+- Error handling should remain consistent with the API response structure so the traveller receives understandable feedback without ambiguous state transitions.
 
 ## 11. Testing Strategy
 
@@ -369,6 +433,7 @@ The testing strategy should verify that the business behaviour and required work
 - Reservation workflow from API request through validation and reservation creation
 - Reservation lookup workflow
 - Error response behaviour for invalid input and validation failure
+- End-to-end HTTP testing using WebApplicationFactory for the API layer
 
 ### 11.3 UI Testing Scope
 
@@ -376,6 +441,9 @@ The testing strategy should verify that the business behaviour and required work
 - Results display behaviour and sorting
 - Reservation form validation and confirmation flow
 - Confirmation screen rendering for successful and failed reservations
+- Loading, empty, and error-state rendering for search and reservation interactions
+- UI state transitions across search, result selection, reservation submission, and confirmation views
+- Angular component and service unit tests for form validation, state handling, and API integration behaviour
 
 ### 11.4 Test Data and Determinism
 

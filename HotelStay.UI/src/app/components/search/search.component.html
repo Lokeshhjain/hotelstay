@@ -5,21 +5,20 @@
       <h2 class="h3 mb-1">Find available rooms</h2>
       <p class="soft-muted mb-0">Compare provider offers in a normalized list.</p>
     </div>
-    <span class="badge text-bg-light border align-self-start align-self-lg-center">Bootstrap layout</span>
   </div>
 
-  <div class="row g-3 align-items-end">
+  <form [formGroup]="form" (ngSubmit)="onSearch()" class="row g-3 align-items-end">
     <div class="col-12 col-md-6 col-lg-4">
       <label class="form-label fw-semibold">Destination</label>
-      <input class="form-control focus-ring" [(ngModel)]="destination" placeholder="Delhi, Paris, Tokyo" />
-      <div class="invalid-feedback d-block" *ngIf="submitted && !destination.trim()">
+      <input class="form-control focus-ring" formControlName="destination" placeholder="Delhi, Paris, Tokyo" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('destination')?.hasError('required')">
         Destination is required.
       </div>
     </div>
     <div class="col-6 col-lg-2">
       <label class="form-label fw-semibold">Check in</label>
-      <input class="form-control focus-ring" type="date" [min]="today" [(ngModel)]="checkIn" />
-      <div class="invalid-feedback d-block" *ngIf="submitted && !checkIn">
+      <input class="form-control focus-ring" type="date" [min]="today" formControlName="checkIn" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('checkIn')?.hasError('required')">
         Check-in date is required.
       </div>
       <div class="invalid-feedback d-block" *ngIf="submitted && checkInInvalid">
@@ -28,20 +27,17 @@
     </div>
     <div class="col-6 col-lg-2">
       <label class="form-label fw-semibold">Check out</label>
-      <input class="form-control focus-ring" type="date" [min]="checkIn || today" [(ngModel)]="checkOut" />
-      <div class="invalid-feedback d-block" *ngIf="submitted && !checkOut">
+      <input class="form-control focus-ring" type="date" [min]="form.get('checkIn')?.value || today" formControlName="checkOut" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('checkOut')?.hasError('required')">
         Check-out date is required.
       </div>
-      <div class="invalid-feedback d-block" *ngIf="submitted && checkOut && checkIn && checkOut <= checkIn">
+      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('checkOut')?.value && form.get('checkIn')?.value && form.get('checkOut')?.value <= form.get('checkIn')?.value">
         Check-out must be after check-in.
-      </div>
-      <div class="invalid-feedback d-block" *ngIf="submitted && !checkOutInvalid && checkOut && checkOut < today">
-        Check-out date cannot be in the past.
       </div>
     </div>
     <div class="col-12 col-md-6 col-lg-2">
       <label class="form-label fw-semibold">Room type</label>
-      <select class="form-select focus-ring" [(ngModel)]="roomType">
+      <select class="form-select focus-ring" formControlName="roomType">
         <option value="">Any</option>
         <option value="standard">Standard</option>
         <option value="deluxe">Deluxe</option>
@@ -49,9 +45,13 @@
       </select>
     </div>
     <div class="col-12 col-md-6 col-lg-2 d-grid">
-      <button class="btn btn-dark btn-lg" (click)="onSearch()">Search stays</button>
+      <button class="btn btn-dark btn-lg" type="submit" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Search stays</span>
+        <span *ngIf="isLoading">Searching…</span>
+      </button>
     </div>
-  </div>
+  </form>
 
   <div class="alert alert-danger mt-3 mb-0" *ngIf="message">{{ message }}</div>
+  <div class="text-body-secondary small mt-3" *ngIf="isLoading">Loading matching stays…</div>
 </section>

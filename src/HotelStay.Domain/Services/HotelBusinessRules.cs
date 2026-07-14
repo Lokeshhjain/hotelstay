@@ -22,17 +22,21 @@ public static class HotelBusinessRules
     {
         var normalized = destination.Trim().ToLowerInvariant();
 
-        if (domesticCities.Any(city => normalized.Contains(city)))
+        // Check for exact match in domestic cities
+        if (domesticCities.Any(city => normalized == city))
         {
             return DestinationCategory.Domestic;
         }
 
-        if (internationalCities.Any(city => normalized.Contains(city)))
+        // Check for exact match in international cities
+        if (internationalCities.Any(city => normalized == city))
         {
             return DestinationCategory.International;
         }
 
-        return DestinationCategory.International;
+        // Destination not found in either list
+        var allCities = string.Join(", ", domesticCities.Concat(internationalCities).OrderBy(c => c));
+        throw new ArgumentException($"\"{destination}\" is not a recognized destination. Valid destinations: {allCities}", nameof(destination));
     }
 
     public static RoomType MapRoomType(string? roomType)

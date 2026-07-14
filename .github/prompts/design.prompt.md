@@ -47,6 +47,11 @@ Requirements:
 - Define API contracts, request/response models, error handling strategy, and validation approach where applicable.
 - Include sequence diagrams or interaction flows when they improve clarity.
 - Keep the design extensible, maintainable, and aligned with SOLID principles.
+- Keep the API composition root thin by organizing endpoints through feature-based route extension methods rather than placing all workflow logic inline in the startup entry point.
+- Preserve dedicated provider mapper/adaptor components for PremierStays and BudgetNests so normalization remains isolated and testable.
+- Capture the selected offer as a reservation snapshot at booking time so confirmation and lookup remain independent of subsequent catalog re-querying.
+- Keep frontend state management in shared services or Signals rather than window-based custom events, and use reactive forms for validation and interaction flow.
+- Plan for testability through isolated unit tests using Moq or NSubstitute, parameterized cases with Theory/InlineData, and WebApplicationFactory-based integration tests.
 - Avoid implementation code; focus on architecture, interfaces, contracts, and design rationale.
 
 Generate the relevant design documentation in the specified output folder.
@@ -68,6 +73,7 @@ Verify:
 - every DTO exists
 - sequence diagrams match APIs
 - business rules are reflected
+- endpoint organization, mapper responsibilities, reservation snapshots, state management, and test strategy are all reflected in the design
 
 # Validation Checklist
 

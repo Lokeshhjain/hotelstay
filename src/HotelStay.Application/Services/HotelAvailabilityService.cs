@@ -71,6 +71,13 @@ public sealed class HotelAvailabilityService : IHotelAvailabilityService
             throw new InvalidOperationException("The selected offer could not be found.");
         }
 
+        // Check if this offer has already been reserved
+        var reservedOfferIds = new HashSet<string>(await _reservationStore.GetReservedOfferIdsAsync(cancellationToken), StringComparer.OrdinalIgnoreCase);
+        if (reservedOfferIds.Contains(selectedOffer.Id))
+        {
+            throw new InvalidOperationException("This offer has already been reserved. Please select another offer.");
+        }
+
         var reservation = ReservationMapper.ToReservation(selectedOffer, request, validation);
 
         await _reservationStore.AddAsync(reservation, cancellationToken);

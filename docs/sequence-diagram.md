@@ -35,6 +35,7 @@ sequenceDiagram
     participant API as Hotel API
     participant App as Application Layer
     participant Validation as Validation Rules
+    participant Store as Reservation Store
 
     Traveller->>UI: Submit reservation request
     UI->>API: POST /hotels/reserve
@@ -42,8 +43,10 @@ sequenceDiagram
     App->>Validation: Validate destination and document
     alt Document is valid
         Validation-->>App: Validation passed
-        App-->>API: Create reservation record
-        API-->>UI: Return reservation reference
+        App->>Store: Persist reservation with full offer snapshot
+        Store-->>App: Reservation reference confirmed
+        App-->>API: Return confirmation details
+        API-->>UI: Return reservation reference and snapshot
         UI-->>Traveller: Show confirmation details
     else Document is invalid
         Validation-->>App: Validation failed

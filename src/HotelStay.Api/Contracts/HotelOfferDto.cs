@@ -6,4 +6,5 @@ public sealed record HotelOfferDto(
     string RoomType,
     decimal PerNightRate,
     decimal TotalStayPrice,
-    string CancellationPolicy);
+    string CancellationPolicy,
+    int CancellationWindowHoursBeforeCheckIn);

@@ -39,13 +39,47 @@ public sealed class HotelBusinessRulesTests
     }
 
     [Fact]
-    public void DetermineDestinationCategory_UsesKnownCityLists()
+    public void DetermineDestinationCategory_ReturnsDomesticForKnownDomesticCity()
     {
         var domesticCities = new[] { "delhi", "mumbai" };
         var internationalCities = new[] { "london", "paris" };
 
-        var domestic = HotelBusinessRules.DetermineDestinationCategory("Travel to Delhi", domesticCities, internationalCities);
-        var international = HotelBusinessRules.DetermineDestinationCategory("Trip to Paris", domesticCities, internationalCities);
+        var domestic = HotelBusinessRules.DetermineDestinationCategory("Delhi", domesticCities, internationalCities);
+
+        Assert.Equal(DestinationCategory.Domestic, domestic);
+    }
+
+    [Fact]
+    public void DetermineDestinationCategory_ReturnsInternationalForKnownInternationalCity()
+    {
+        var domesticCities = new[] { "delhi", "mumbai" };
+        var internationalCities = new[] { "london", "paris" };
+
+        var international = HotelBusinessRules.DetermineDestinationCategory("Paris", domesticCities, internationalCities);
+
+        Assert.Equal(DestinationCategory.International, international);
+    }
+
+    [Fact]
+    public void DetermineDestinationCategory_ThrowsForUnknownDestination()
+    {
+        var domesticCities = new[] { "delhi", "mumbai" };
+        var internationalCities = new[] { "london", "paris" };
+
+        var exception = Assert.Throws<ArgumentException>(() => 
+            HotelBusinessRules.DetermineDestinationCategory("Unknown City", domesticCities, internationalCities));
+
+        Assert.Contains("not a recognized destination", exception.Message);
+    }
+
+    [Fact]
+    public void DetermineDestinationCategory_IsCaseInsensitive()
+    {
+        var domesticCities = new[] { "delhi", "mumbai" };
+        var internationalCities = new[] { "london", "paris" };
+
+        var domestic = HotelBusinessRules.DetermineDestinationCategory("DELHI", domesticCities, internationalCities);
+        var international = HotelBusinessRules.DetermineDestinationCategory("PARIS", domesticCities, internationalCities);
 
         Assert.Equal(DestinationCategory.Domestic, domestic);
         Assert.Equal(DestinationCategory.International, international);

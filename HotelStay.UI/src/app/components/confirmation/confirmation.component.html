@@ -1,0 +1,30 @@
+<section class="confirmation-panel" *ngIf="isVisible">
+  <div class="mb-3">
+    <div class="section-label mb-2">Confirmation</div>
+    <h2 class="h3 mb-1">Your reservation is ready</h2>
+    <p class="soft-muted mb-0">Keep the reservation reference for future lookup and follow-up.</p>
+  </div>
+
+  <div class="alert" [class.alert-success]="isSuccess" [class.alert-danger]="!isSuccess">
+    {{ message }}
+  </div>
+
+  <div class="row g-3" *ngIf="isSuccess">
+    <div class="col-12 col-md-6">
+      <div class="metric-label">Reservation reference</div>
+      <div class="metric-value">{{ reservationReference }}</div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="metric-label">Provider</div>
+      <div class="metric-value">{{ provider }}</div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="metric-label">Total price</div>
+      <div class="metric-value">₹ {{ totalPrice }}</div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="metric-label">Cancellation policy</div>
+      <div class="metric-value">{{ formatCancellationPolicy() }}</div>
+    </div>
+  </div>
+</section>

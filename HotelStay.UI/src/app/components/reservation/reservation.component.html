@@ -5,38 +5,46 @@
     <p class="soft-muted mb-0">The backend re-checks document rules before creating a booking.</p>
   </div>
 
-  <div class="row g-3">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="row g-3">
     <div class="col-12 col-md-6">
       <label class="form-label fw-semibold">Traveller name</label>
-      <input class="form-control focus-ring" [(ngModel)]="travellerName" placeholder="Alex Johnson" />
-      <div class="invalid-feedback d-block" *ngIf="submitted && !travellerName.trim()">Traveller name is required.</div>
+      <input class="form-control focus-ring" formControlName="travellerName" placeholder="Alex Johnson" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('travellerName')?.hasError('required')">Traveller name is required.</div>
     </div>
     <div class="col-12 col-md-6">
       <label class="form-label fw-semibold">Destination</label>
-      <input class="form-control focus-ring" [(ngModel)]="destination" placeholder="Delhi" />
-      <div class="invalid-feedback d-block" *ngIf="submitted && !destination.trim()">Destination is required.</div>
+      <input class="form-control focus-ring" formControlName="destination" placeholder="Delhi" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('destination')?.hasError('required')">Destination is required.</div>
     </div>
     <div class="col-12 col-md-6">
       <label class="form-label fw-semibold">Document type</label>
-      <select class="form-select focus-ring" [(ngModel)]="documentType">
-        <option value="Passport">Passport</option>
-        <option value="NationalId">National ID</option>
+      <select class="form-select focus-ring" formControlName="documentType" [disabled]="!requiredDocumentType">
+        <option *ngFor="let docType of availableDocumentTypes" [value]="docType">
+          {{ getDocumentTypeDisplay(docType) }}
+        </option>
       </select>
-      <div class="invalid-feedback d-block" *ngIf="submitted && !documentType.trim()">Document type is required.</div>
+      <div class="form-text" *ngIf="documentHint">{{ documentHint }}</div>
+      <div class="form-text text-warning" *ngIf="!requiredDocumentType">
+        Enter a destination to see the required document type.
+      </div>
     </div>
     <div class="col-12 col-md-6">
       <label class="form-label fw-semibold">Document number</label>
-      <input class="form-control focus-ring" [(ngModel)]="documentNumber" placeholder="ID or passport number" />
-      <div class="invalid-feedback d-block" *ngIf="submitted && !documentNumber.trim()">Document number is required.</div>
+      <input class="form-control focus-ring" formControlName="documentNumber" placeholder="ID or passport number" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('documentNumber')?.hasError('required')">Document number is required.</div>
     </div>
     <div class="col-12">
       <label class="form-label fw-semibold">Selected offer ID</label>
-      <input class="form-control focus-ring" [(ngModel)]="selectedOfferId" placeholder="Choose a result to auto-fill this" />
-      <div class="invalid-feedback d-block" *ngIf="submitted && !selectedOfferId.trim()">Selected offer ID is required.</div>
+      <input class="form-control focus-ring" formControlName="selectedOfferId" placeholder="Choose a result to auto-fill this" />
+      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('selectedOfferId')?.hasError('required')">Selected offer ID is required.</div>
     </div>
     <div class="col-12 d-grid d-md-flex justify-content-md-end">
-      <button class="btn btn-dark px-4" (click)="submit()">Reserve now</button>
+      <button class="btn btn-dark px-4" type="submit" [disabled]="isSubmitting">{{ isSubmitting ? 'Reserving…' : 'Reserve now' }}</button>
     </div>
+  </form>
+
+  <div class="alert alert-danger mt-3 mb-0" *ngIf="validationMessage">
+    {{ validationMessage }}
   </div>
 
   <div class="message mt-3" [class.text-success]="message.startsWith('Reservation confirmed')" [class.text-danger]="message.startsWith('Reservation failed') || message.toLowerCase().includes('invalid')">

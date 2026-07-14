@@ -22,6 +22,17 @@ public static class ReservationMapper
             DocumentType = request.DocumentType,
             DocumentNumber = request.DocumentNumber,
             SelectedOfferId = selectedOffer.Id,
+            OfferSnapshot = new HotelOffer
+            {
+                Id = selectedOffer.Id,
+                Provider = selectedOffer.Provider,
+                RoomType = selectedOffer.RoomType,
+                PerNightRate = selectedOffer.PerNightRate,
+                TotalStayPrice = selectedOffer.TotalStayPrice,
+                CancellationPolicy = selectedOffer.CancellationPolicy,
+                CancellationWindowHoursBeforeCheckIn = selectedOffer.CancellationWindowHoursBeforeCheckIn,
+                IsAvailable = selectedOffer.IsAvailable
+            },
             ValidationOutcome = validation.Message
         };
     }

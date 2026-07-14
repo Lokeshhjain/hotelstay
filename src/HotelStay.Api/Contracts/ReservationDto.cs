@@ -4,4 +4,5 @@ public sealed record ReservationDto(
     string ReservationReference,
     string Provider,
     decimal TotalPrice,
-    string CancellationPolicy);
+    string CancellationPolicy,
+    HotelOfferDto? OfferSnapshot);

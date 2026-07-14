@@ -16,22 +16,30 @@ public sealed class HotelDocumentValidationService : IHotelDocumentValidationSer
 
     public async Task<DocumentValidationResult> ValidateDocumentAsync(string destination, DocumentType documentType, string documentNumber, CancellationToken cancellationToken = default)
     {
-        var domesticCities = await _destinationCategorySource.GetDomesticCitiesAsync(cancellationToken);
-        var internationalCities = await _destinationCategorySource.GetInternationalCitiesAsync(cancellationToken);
-
-        var category = HotelBusinessRules.DetermineDestinationCategory(destination, domesticCities, internationalCities);
-        var requiredDocument = category == DestinationCategory.International ? DocumentType.Passport : DocumentType.NationalId;
-
-        if (string.IsNullOrWhiteSpace(documentNumber))
+        try
         {
-            return new DocumentValidationResult(false, "Document number is required.");
-        }
+            var domesticCities = await _destinationCategorySource.GetDomesticCitiesAsync(cancellationToken);
+            var internationalCities = await _destinationCategorySource.GetInternationalCitiesAsync(cancellationToken);
 
-        if (documentType != requiredDocument)
+            var category = HotelBusinessRules.DetermineDestinationCategory(destination, domesticCities, internationalCities);
+            var requiredDocument = category == DestinationCategory.International ? DocumentType.Passport : DocumentType.NationalId;
+
+            if (string.IsNullOrWhiteSpace(documentNumber))
+            {
+                return new DocumentValidationResult(false, "Document number is required.");
+            }
+
+            if (documentType != requiredDocument)
+            {
+                return new DocumentValidationResult(false, $"{category} destinations require a {requiredDocument}.");
+            }
+
+            return new DocumentValidationResult(true, "Document accepted.");
+        }
+        catch (ArgumentException ex)
         {
-            return new DocumentValidationResult(false, $"{category} destinations require a {requiredDocument}.");
+            // Destination is not recognized
+            return new DocumentValidationResult(false, ex.Message);
         }
-
-        return new DocumentValidationResult(true, "Document accepted.");
     }
 }

@@ -18,11 +18,33 @@ public sealed class HotelDocumentValidationServiceTests
     }
 
     [Fact]
-    public async Task ValidateDocumentAsync_ReturnsInvalidForInternationalDestinationWithWrongDocument()
+    public async Task ValidateDocumentAsync_ReturnsInvalidForDomesticDestinationWithPassport()
     {
         var service = new HotelDocumentValidationService(new FakeDestinationCategorySource());
 
-        var result = await service.ValidateDocumentAsync("Paris", DocumentType.NationalId, "NID-123");
+        var result = await service.ValidateDocumentAsync("Delhi", DocumentType.Passport, "PASSPORT-123");
+
+        Assert.False(result.IsValid);
+        Assert.Equal("Domestic destinations require a NationalId.", result.Message);
+    }
+
+    [Fact]
+    public async Task ValidateDocumentAsync_ReturnsValidForInternationalDestinationWithPassport()
+    {
+        var service = new HotelDocumentValidationService(new FakeDestinationCategorySource());
+
+        var result = await service.ValidateDocumentAsync("Paris", DocumentType.Passport, "PASSPORT-456");
+
+        Assert.True(result.IsValid);
+        Assert.Equal("Document accepted.", result.Message);
+    }
+
+    [Fact]
+    public async Task ValidateDocumentAsync_ReturnsInvalidForInternationalDestinationWithNationalId()
+    {
+        var service = new HotelDocumentValidationService(new FakeDestinationCategorySource());
+
+        var result = await service.ValidateDocumentAsync("Paris", DocumentType.NationalId, "NID-456");
 
         Assert.False(result.IsValid);
         Assert.Equal("International destinations require a Passport.", result.Message);
@@ -34,6 +56,17 @@ public sealed class HotelDocumentValidationServiceTests
         var service = new HotelDocumentValidationService(new FakeDestinationCategorySource());
 
         var result = await service.ValidateDocumentAsync("Delhi", DocumentType.NationalId, string.Empty);
+
+        Assert.False(result.IsValid);
+        Assert.Equal("Document number is required.", result.Message);
+    }
+
+    [Fact]
+    public async Task ValidateDocumentAsync_ReturnsInvalidWhenDocumentNumberIsWhitespace()
+    {
+        var service = new HotelDocumentValidationService(new FakeDestinationCategorySource());
+
+        var result = await service.ValidateDocumentAsync("Delhi", DocumentType.NationalId, "   ");
 
         Assert.False(result.IsValid);
         Assert.Equal("Document number is required.", result.Message);

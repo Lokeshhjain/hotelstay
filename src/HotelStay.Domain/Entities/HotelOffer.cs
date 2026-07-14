@@ -10,5 +10,6 @@ public sealed class HotelOffer
     public decimal PerNightRate { get; init; }
     public decimal TotalStayPrice { get; init; }
     public CancellationPolicy CancellationPolicy { get; init; }
+    public int CancellationWindowHoursBeforeCheckIn { get; init; }
     public bool IsAvailable { get; init; } = true;
 }

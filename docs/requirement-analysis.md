@@ -217,15 +217,24 @@ When an invalid document is submitted:
 
 ## FR-015 Reservation Confirmation
 
-Successful reservations shall return:
+Successful reservations shall produce a structured confirmation view that includes:
 
 - Reservation reference number
+- Provider name
+- Total price
+- Cancellation policy
 
 ---
 
 ## FR-016 Retrieve Reservation
 
 The traveller shall be able to retrieve reservation details using the reservation reference.
+
+---
+
+## FR-017 Search Result Relevance
+
+Search results shall reflect the traveller’s selected destination, check-in date, check-out date, and optional room type.
 
 ---
 
@@ -319,7 +328,30 @@ Document validation depends on destination type.
 
 ---
 
-# 10. Validation Rules
+## BR-012
+
+Domestic destination list shall contain at least 2 cities.
+
+---
+
+## BR-013
+
+International destination list shall contain at least 3 cities.
+
+---
+
+## BR-014
+
+BudgetNests rooms returned with `available: false` shall be filtered out and not shown to the traveller.
+
+---
+
+## BR-015
+
+International destinations always return available rooms from all providers.
+
+---
+
 
 | Rule | Validation |
 |------|------------|
@@ -427,6 +459,8 @@ The application shall provide meaningful validation messages.
 - AC-007: Reservation lookup returns the corresponding reservation details using the reservation reference.
 - AC-008: The application runs fully offline using deterministic stub providers.
 - AC-009: The business flow can accommodate a third provider without changing the core traveller experience.
+- AC-010: A successful reservation produces a confirmation view that includes the reservation reference, provider, total price, and cancellation policy.
+- AC-011: Search results are returned in a way that reflects the selected destination, check-in date, check-out date, and optional room type.
 
 ---
 
@@ -448,8 +482,9 @@ The application shall provide meaningful validation messages.
 | FR-012 | Functional Requirement | Business Requirement | AC-005, AC-006 |
 | FR-013 | Functional Requirement | Business Requirement | AC-005, AC-006 |
 | FR-014 | Functional Requirement | Business Requirement | AC-006 |
-| FR-015 | Functional Requirement | Business Requirement | AC-005 |
+| FR-015 | Functional Requirement | Business Requirement | AC-005, AC-010 |
 | FR-016 | Functional Requirement | Business Requirement | AC-007 |
+| FR-017 | Functional Requirement | Business Requirement | AC-011 |
 | BR-001 | Business Rule | Business Requirement | AC-002 |
 | BR-002 | Business Rule | Business Requirement | AC-002 |
 | BR-003 | Business Rule | Business Requirement | AC-002 |
@@ -460,6 +495,7 @@ The application shall provide meaningful validation messages.
 | BR-008 | Business Rule | Business Requirement | AC-004 |
 | BR-009 | Business Rule | Business Requirement | AC-002 |
 | BR-010 | Business Rule | Business Requirement | AC-005, AC-006 |
+| BR-011 | Business Rule | Business Requirement | AC-010 |
 | NFR-001 | Non-Functional Requirement | Business Requirement | AC-008 |
 | NFR-002 | Non-Functional Requirement | Business Requirement | AC-008 |
 | NFR-003 | Non-Functional Requirement | Business Requirement | AC-009 |

@@ -1,53 +1,79 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { FormsModule } from '@angular/forms';
+import { HotelStateService } from '../../services/hotel-state.service';
 
 @Component({
   standalone: true,
   selector: 'app-search',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.css']
 })
 export class SearchComponent {
-  destination = '';
-  checkIn = '';
-  checkOut = '';
-  roomType = '';
+  readonly form: FormGroup;
   submitted = false;
   message = '';
+  isLoading = false;
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private readonly api: ApiService,
+    private readonly state: HotelStateService,
+    private readonly fb: FormBuilder
+  ) {
+    this.form = this.fb.group({
+      destination: ['', Validators.required],
+      checkIn: ['', Validators.required],
+      checkOut: ['', Validators.required],
+      roomType: ['']
+    });
+  }
 
   get today(): string {
     return new Date().toISOString().split('T')[0];
   }
 
   get checkInInvalid(): boolean {
-    return !!this.checkIn && this.checkIn < this.today;
+    const checkIn = this.form.get('checkIn')?.value;
+    return !!checkIn && checkIn < this.today;
   }
 
   get checkOutInvalid(): boolean {
-    if (!this.checkOut) return false;
-    if (this.checkOut < this.today) return true;
-    return !!this.checkIn && this.checkOut <= this.checkIn;
+    const checkIn = this.form.get('checkIn')?.value;
+    const checkOut = this.form.get('checkOut')?.value;
+    if (!checkOut) return false;
+    if (checkOut < this.today) return true;
+    return !!checkIn && checkOut <= checkIn;
   }
 
-  onSearch() {
+  onSearch(): void {
     this.submitted = true;
     this.message = '';
 
-    if (!this.destination.trim() || !this.checkIn || !this.checkOut || this.checkInInvalid || this.checkOutInvalid) {
+    if (this.form.invalid || this.checkInInvalid || this.checkOutInvalid) {
       return;
     }
 
-    this.api.search(this.destination, this.checkIn, this.checkOut, this.roomType).subscribe({
+    const values = this.form.value;
+    this.isLoading = true;
+    this.state.setSearchCriteria({
+      destination: values.destination,
+      checkIn: values.checkIn,
+      checkOut: values.checkOut,
+      roomType: values.roomType
+    });
+
+    this.api.search(values.destination, values.checkIn, values.checkOut, values.roomType).subscribe({
       next: (res: any) => {
-        window.dispatchEvent(new CustomEvent('searchResults', { detail: { results: res.results || res, criteria: { destination: this.destination } } }));
+        this.isLoading = false;
+        const results = (res.results || res || []) as any[];
+        this.state.setSearchResults(results);
       },
       error: (err) => {
+        this.isLoading = false;
         this.message = err?.error?.message || err?.error?.error || 'Search failed';
+        this.state.setSearchResults([]);
       }
     });
   }

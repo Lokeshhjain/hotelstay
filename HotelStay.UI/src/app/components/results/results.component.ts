@@ -1,5 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HotelStateService } from '../../services/hotel-state.service';
 
 @Component({
   standalone: true,
@@ -8,38 +9,59 @@ import { CommonModule } from '@angular/common';
   templateUrl: './results.component.html',
   styleUrls: ['./results.component.css']
 })
-export class ResultsComponent implements OnInit, OnDestroy {
+export class ResultsComponent implements OnInit {
   results: any[] = [];
   selectedId = '';
+  isEmpty = true;
+  sortOrder: 'asc' | 'desc' = 'asc';
 
-  private searchHandler = (e: any) => {
-    this.results = e.detail?.results || [];
-  };
-
-  private reservedHandler = (e: any) => {
-    const id = e.detail?.offerId as string | undefined;
-    if (!id) return;
-    this.results = this.results.filter(r => (r.id || r.Id) !== id);
-  };
+  constructor(private readonly state: HotelStateService) {}
 
   ngOnInit() {
-    window.addEventListener('searchResults', this.searchHandler as EventListener);
-    window.addEventListener('offerReserved', this.reservedHandler as EventListener);
+    this.state.searchResults$.subscribe((results) => {
+      this.results = this.sortResults([...results]);
+      this.isEmpty = this.results.length === 0;
+    });
+
+    this.state.selectedOffer$.subscribe((offer) => {
+      this.selectedId = offer?.id || '';
+    });
   }
 
-  ngOnDestroy() {
-    window.removeEventListener('searchResults', this.searchHandler as EventListener);
-    window.removeEventListener('offerReserved', this.reservedHandler as EventListener);
-  }
-
-  selectOffer(id: string, offer: any) {
+  selectOffer(id: string, offer: any): void {
     this.selectedId = id;
-    window.dispatchEvent(new CustomEvent('offerSelected', { detail: { offerId: id, offer } }));
-    try {
-      const el = document.querySelector('app-reservation');
-      if (el && (el as HTMLElement).scrollIntoView) {
-        (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    } catch { }
+    this.state.selectOffer(offer);
+    this.state.setReservationState('', false);
+  }
+
+  toggleSort(): void {
+    this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    this.results = this.sortResults(this.results);
+  }
+
+  private sortResults(results: any[]): any[] {
+    return [...results].sort((a, b) => {
+      const diff = this.getTotalPrice(a) - this.getTotalPrice(b);
+      return this.sortOrder === 'asc' ? diff : -diff;
+    });
+  }
+
+  private getTotalPrice(offer: any): number {
+    return Number(offer.totalStayPrice ?? offer.TotalStayPrice ?? 0);
+  }
+
+  formatCancellationPolicy(offer: any): string {
+    const policy = offer.cancellationPolicy ?? offer.CancellationPolicy ?? '';
+    const window = offer.cancellationWindowHoursBeforeCheckIn ?? offer.CancellationWindowHoursBeforeCheckIn;
+
+    if (window === 0) {
+      return policy;
+    }
+
+    if (window) {
+      return `${policy} (${window}h before check-in)`;
+    }
+
+    return policy;
   }
 }

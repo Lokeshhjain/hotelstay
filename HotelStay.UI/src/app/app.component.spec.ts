@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
+      providers: [provideHttpClient()],
     }).compileComponents();
   });
 
@@ -14,16 +16,17 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'HotelStay.UI' title`, () => {
+  it(`should have the 'SkyRoute Hotel Availability' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('HotelStay.UI');
+    expect(app.title).toEqual('SkyRoute Hotel Availability');
   });
 
-  it('should render title', () => {
+  it('should render the main app shell sections', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, HotelStay.UI');
+    expect(compiled.textContent).toContain('Search');
+    expect(compiled.textContent).toContain('Results');
   });
 });

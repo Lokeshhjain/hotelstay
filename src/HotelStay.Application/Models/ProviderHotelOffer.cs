@@ -8,4 +8,5 @@ public sealed record ProviderHotelOffer(
     string RoomTypeCode,
     decimal PerNightRate,
     CancellationPolicy CancellationPolicy,
-    bool IsAvailable);
+    bool IsAvailable,
+    int CancellationWindowHoursBeforeCheckIn);

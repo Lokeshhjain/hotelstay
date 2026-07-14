@@ -5,12 +5,12 @@
       <h2 class="h3 mb-1">Normalized hotel offers</h2>
       <p class="soft-muted mb-0">Unavailable BudgetNests rooms are hidden automatically.</p>
     </div>
-    <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis border border-success-subtle">
-      Sorts by total price
-    </span>
+    <button class="btn btn-outline-dark btn-sm" type="button" (click)="toggleSort()">
+      Sort: {{ sortOrder === 'asc' ? 'Low to High' : 'High to Low' }}
+    </button>
   </div>
 
-  <div *ngIf="results.length === 0" class="empty-state text-center py-5">
+  <div *ngIf="isEmpty" class="empty-state text-center py-5">
     <div class="display-6 mb-2">No results yet</div>
     <p class="soft-muted mb-0">Run a search to compare stays from both providers.</p>
   </div>
@@ -42,7 +42,7 @@
           </div>
           <div class="col-12">
             <div class="metric-label">Cancellation policy</div>
-            <div class="metric-value">{{ r.cancellationPolicy || r.CancellationPolicy }}</div>
+            <div class="metric-value">{{ formatCancellationPolicy(r) }}</div>
           </div>
         </div>
 

@@ -10,7 +10,7 @@ Use this prompt during the implementation phase when the design is approved and 
 
 - <ProjectName>
 - <BusinessRequirement>
-- <TechnologyStack>
+- <TclsechnologyStack>
 - <ArchitectureStyle>
 - <SpecificationFile>
 - <OutputFolder>
@@ -26,6 +26,7 @@ Review
 - #file:spec.md
 - #file:docs/requirement-analysis.md
 - #file:.github/copilot-instructions.md
+- #file:modeling.prompt.md
 - #codebase
 
 # Prompt
@@ -36,6 +37,7 @@ Use the repository instructions and the existing workspace context to implement 
 
 Requirements:
 - Review repository instructions, architecture guidance, and existing code before making changes.
+- Use the modelling artifacts from #file:modeling.prompt.md as an internal prerequisite for implementation planning and execution.
 - Preserve the existing architecture and integrate with current patterns rather than introducing parallel structures.
 - Follow SOLID principles, clean code practices, and domain-driven design where applicable.
 - Generate the necessary backend, frontend, project structure, services, providers, endpoints, dependency injection registrations, validation logic, and mapping layers.
@@ -46,6 +48,8 @@ Requirements:
 - Avoid generating unnecessary boilerplate or speculative features.
 
 Generate the implementation artifacts in the requested output folder and maintain consistency across the codebase.
+
+Implementation should be driven by the approved modelling outputs from #file:modeling.prompt.md, including domain concepts, request/response expectations, validation boundaries, and workflow abstractions.
 
 
 ## Multi-file Generation

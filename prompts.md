@@ -1,80 +1,85 @@
 # AI Prompts Used
 
-This file captures the main prompts used while building the HotelStay case study, along with the implementation decisions that followed from them.
+This file captures the main prompts and prompt artifacts used while building the HotelStay case study, along with the implementation decisions and review work that followed from them.
 
-## 1. Case Study Understanding Prompt
+## AI Model
 
-Prompt intent:
-- Read the HotelStay specification and summarize the product, architecture, and workflow.
+- Repository prompt artifacts are written for GitHub Copilot Agent Mode.
+- Current assistant runtime in this workspace is Raptor mini.
+- Usage intent: analysis, design, implementation, testing, and review assistance for the HotelStay case study.
 
-Decision notes:
-- I used this to align the implementation with the case study scope before writing code.
-- It helped confirm the solution should stay offline and use deterministic stub data.
-- It also clarified that the system should stay within a layered architecture instead of introducing unnecessary complexity.
+## Prompt Files and Usage
 
-## 2. Backend Test Implementation Prompt
+The repository contains the following prompt artifacts under `.github/prompts/`:
 
-Prompt intent:
-- Create a new xUnit test project under `tests` and implement backend unit tests.
+- `analysis.prompt.md`
+  - Used to translate requirements into a structured business analysis artifact.
+- `design.prompt.md`
+  - Used to define architecture boundaries, component responsibilities, API contracts, and workflow sequencing.
+- `modeling.prompt.md`
+  - Used to clarify domain concepts, request/response contracts, validation boundaries, and workflow abstractions.
+- `implementation.prompt.md`
+  - Used to implement the approved solution in the target stack, including backend, frontend, and integration points.
+- `testing.prompt.md`
+  - Used to add and refine backend and frontend tests, covering happy paths, failure cases, and validation scenarios.
+- `review.prompt.md`
+  - Used to review the solution for quality, architecture compliance, documentation completeness, and production readiness.
 
-Decision notes:
-- I added a dedicated `HotelStay.UnitTests` project rather than placing tests inside the API project.
-- I referenced the Application, Domain, and Infrastructure projects so the tests could exercise real application behavior.
-- I focused on core business rules:
-  - search validation
-  - document validation
-  - offer normalization
-  - reservation creation
-  - reservation lookup
-  - in-memory store behavior
+## Prompt Execution Summary
 
-## 3. UI Implementation Prompt
+- `analysis.prompt.md` guided the requirement analysis and helped capture the business scope, functional requirements, and validation rules.
+- `design.prompt.md` guided architecture and API contract design, including feature separation and provider normalization expectations.
+- `modeling.prompt.md` helped define the core domain model concepts, data contracts, and workflow boundaries without embedding implementation detail.
+- `implementation.prompt.md` guided actual code changes across the backend and Angular frontend while preserving the layered architecture.
+- `testing.prompt.md` drove the creation and improvement of unit tests, integration tests, and component tests.
+- `review.prompt.md` was used to validate the final solution, identify last-pass fixes, and update documentation such as this prompt log.
 
-Prompt intent:
-- Improve the UI look and feel using Bootstrap.
+## Prompt Catalog
 
-Decision notes:
-- I added Bootstrap to the Angular app and updated the shell layout first.
-- I kept the existing component structure instead of rewriting the UI from scratch.
-- I used a consistent card-based presentation across search, results, reservation, and lookup sections.
-- I kept the UI offline-friendly and avoided introducing extra state libraries because the case study scope did not require them.
-
-## 4. Search Filter Fix Prompt
+### `analysis.prompt.md`
 
 Prompt intent:
-- Fix the search API optional filter so room type actually affects results.
+- Translate a business requirement into a structured requirement analysis artifact that can be handed off to design.
 
-Decision notes:
-- I added explicit room type parsing and validation so invalid filter values no longer pass silently.
-- I applied the filter in the application layer, which kept provider normalization separate from business selection logic.
-- I added tests to lock in the behavior for valid, invalid, and filtered searches.
-
-## 5. Review and Score Prompt
+### `design.prompt.md`
 
 Prompt intent:
-- Evaluate the completed HotelStay solution for code quality, architecture, AI usage, prompting skills, and production readiness.
+- Produce design and architecture guidance, including component responsibilities, API contracts, and interaction flows.
 
-Decision notes:
-- The review highlighted that the solution is strong as a case study but not yet production-ready.
-- The biggest recommended improvements were:
-  - explicit API DTOs
-  - stronger validation boundaries
-  - cleaner UI state handling
-  - integration tests
-  - better reservation flow design
+### `modeling.prompt.md`
+
+Prompt intent:
+- Define domain concepts, request/response models, validation rules, and workflow abstractions without introducing implementation detail.
+
+### `implementation.prompt.md`
+
+Prompt intent:
+- Implement the approved solution in a production-ready manner for the target technology stack with a focus on maintainability and testability.
+
+### `testing.prompt.md`
+
+Prompt intent:
+- Create comprehensive tests for backend and frontend behavior, including success paths, negative paths, and edge cases.
+
+### `review.prompt.md`
+
+Prompt intent:
+- Evaluate the final solution for architecture compliance, code quality, security, and documentation readiness.
 
 ## Implementation Principles Followed
 
 - Keep the solution offline and deterministic.
 - Use in-memory storage only.
-- Preserve the layered architecture from the specification.
-- Keep provider-specific behavior isolated.
+- Preserve the layered architecture implied by the case study.
+- Keep provider-specific behavior isolated behind normalization boundaries.
 - Normalize provider results before returning them to the UI.
 - Add tests whenever business logic changed.
 - Prefer small targeted changes over speculative overengineering.
+- Keep the API entry point thin and organize endpoints by feature.
+- Preserve explicit mapping layers and validation boundaries.
 
 ## Notes on AI Usage
 
-- AI was used as a coding and analysis assistant, not as a substitute for design decisions.
-- I used the prompts to guide implementation step by step, then verified the output through tests and build checks.
+- AI was used as an assistant for analysis, implementation, testing, and review.
+- Prompt artifacts helped steer the workflow across requirement analysis, architecture design, implementation, and quality validation.
 - The final solution was shaped by human review decisions about scope, architecture, and maintainability.

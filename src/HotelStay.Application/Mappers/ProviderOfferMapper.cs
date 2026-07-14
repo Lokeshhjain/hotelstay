@@ -17,6 +17,7 @@ public static class ProviderOfferMapper
             PerNightRate = offer.PerNightRate,
             TotalStayPrice = offer.PerNightRate * criteria.Nights,
             CancellationPolicy = offer.CancellationPolicy,
+            CancellationWindowHoursBeforeCheckIn = offer.CancellationWindowHoursBeforeCheckIn,
             IsAvailable = offer.IsAvailable
         };
     }
