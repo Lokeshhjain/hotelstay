@@ -43,6 +43,17 @@ export class HotelStateService {
     this.searchResultsSubject.next(results);
   }
 
+  removeOfferFromResults(offerId: string): void {
+    const updatedResults = this.searchResultsSubject
+      .getValue()
+      .filter((offer) => {
+        const candidateId = offer.id ?? offer['Id'];
+        return candidateId !== offerId;
+      });
+
+    this.searchResultsSubject.next(updatedResults);
+  }
+
   selectOffer(offer: HotelOfferViewModel | null): void {
     this.selectedOfferSubject.next(offer);
   }

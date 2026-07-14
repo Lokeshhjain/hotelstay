@@ -111,4 +111,60 @@ public sealed class ApiIntegrationTests
         Assert.NotNull(error);
         Assert.Equal("NOT_FOUND", error!.Code);
     }
+
+    [Fact]
+    public async Task ReserveEndpoint_ReturnsBadRequest_WhenOfferNotStored()
+    {
+        await using var factory = new WebApplicationFactory<Program>();
+        using var client = factory.CreateClient();
+
+        var request = new ReserveHotelRequest(
+            TravellerName: "Alex",
+            Destination: "Delhi",
+            DocumentType: "NationalId",
+            DocumentNumber: "NID-123",
+            SelectedOfferId: "premier-1",
+            OfferSnapshot: null);
+
+        var response = await client.PostAsJsonAsync("/hotels/reserve", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.NotNull(error);
+        Assert.Equal("INVALID_REQUEST", error!.Code);
+    }
+
+    [Fact]
+    public async Task ReserveEndpoint_AllowsColdStartReservationWithOfferSnapshot()
+    {
+        await using var factory = new WebApplicationFactory<Program>();
+        using var client = factory.CreateClient();
+
+        var snapshot = new HotelOfferDto(
+            "premier-1",
+            "PremierStays",
+            "Standard",
+            120m,
+            360m,
+            "FreeCancellation",
+            48);
+
+        var request = new ReserveHotelRequest(
+            TravellerName: "Alex",
+            Destination: "Delhi",
+            DocumentType: "NationalId",
+            DocumentNumber: "NID-123",
+            SelectedOfferId: null,
+            OfferSnapshot: snapshot);
+
+        var response = await client.PostAsJsonAsync("/hotels/reserve", request);
+        response.EnsureSuccessStatusCode();
+
+        var reservationPayload = await response.Content.ReadFromJsonAsync<ReservationDto>();
+        Assert.NotNull(reservationPayload);
+        Assert.Equal("PremierStays", reservationPayload!.Provider);
+        Assert.Equal("premier-1", reservationPayload.OfferSnapshot!.Id);
+        Assert.Equal(360m, reservationPayload.TotalPrice);
+    }
 }

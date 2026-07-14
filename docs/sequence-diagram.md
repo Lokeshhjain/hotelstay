@@ -1,3 +1,34 @@
+```mermaid
+sequenceDiagram
+  actor Traveller
+  Traveller->>+UI: Search(destination, checkIn, checkOut, roomType)
+  UI->>+API: GET /hotels/search
+  API->>+Application: SearchHotelsAsync(criteria)
+  Application->>+Providers: Query PremierStays & BudgetNests (destination-scoped)
+  Providers-->>-Application: Provider-specific results (PascalCase / snake_case)
+  Application->>+Mappers: Normalize offers to shared model
+  Mappers-->>-Application: Normalized ProviderHotelOffer
+  Application->>IOfferCatalog: Store normalized offers
+  Application-->>-API: Return SearchHotelsResponse
+  API-->>-UI: Render results
+  Traveller->>+UI: Select offer and Open Reservation
+  UI->>HotelStateService: set selectedOffer
+  UI->>+API: POST /hotels/reserve (SelectedOfferId OR OfferSnapshot)
+  API->>+Application: ReserveHotelAsync(request)
+  Application->>IHotelDocumentValidationService: Validate document
+  alt Document invalid
+    Application-->>-API: Throw BusinessRuleException -> 422
+  else Document valid
+    Application->>IOfferCatalog: Resolve SelectedOfferId or accept OfferSnapshot
+    alt Offer not found and no snapshot
+      Application-->>-API: Throw InvalidRequestException -> 400
+    else Offer resolved
+      Application->>IReservationStore: Add reservation (store snapshot)
+      Application-->>-API: Return ReservationDto
+      API-->>-UI: Show confirmation
+    end
+  end
+```
 # Sequence Diagrams
 
 ## 1. Hotel Search Flow

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Project | SkyRoute – Hotel Availability |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Draft |
 | Document Type | Requirement Analysis |
 | Development Approach | Specification Driven Development (SDD) |
@@ -28,6 +28,8 @@ SkyRoute requires a unified hotel search experience where travellers can search 
 
 The reservation process must also enforce destination-specific identity document validation.
 
+The current review also highlights that hotel availability data must be fully destination-aware, provider-specific response variations must be preserved as business-relevant behavior, and reservation attempts must be tied to a valid selected offer rather than manual entry or incomplete state.
+
 ---
 
 # 3. Business Objectives
@@ -39,6 +41,7 @@ The reservation process must also enforce destination-specific identity document
 - Provide a consistent booking experience.
 - Ensure the system can easily support additional hotel providers.
 - Support offline execution without external dependencies.
+- Ensure search results and reservations are consistent with the traveller’s selected destination and selected offer context.
 
 ---
 
@@ -57,6 +60,8 @@ The reservation process must also enforce destination-specific identity document
 - Angular frontend
 - REST API
 - Offline execution
+- Destination-scoped search results and offer binding
+- Consistent handling of invalid or stale reservation requests
 
 ## Out of Scope
 
@@ -68,6 +73,7 @@ The reservation process must also enforce destination-specific identity document
 - Email notifications
 - SMS notifications
 - Hotel management functionality
+- External provider integrations beyond the offline stub environment
 
 ---
 
@@ -238,7 +244,76 @@ Search results shall reflect the traveller’s selected destination, check-in da
 
 ---
 
-# 8. API Requirements
+## FR-018 Destination-Scoped Availability Data
+
+The system shall ensure that hotel availability results are scoped to the selected destination so that unrelated cities do not return the same availability set.
+
+---
+
+## FR-019 Provider-Specific Response Handling
+
+The system shall preserve and validate provider-specific availability behavior so that differences in payload structure and availability semantics remain part of the provider integration experience rather than being flattened into a single generic stub.
+
+---
+
+## FR-020 Consistent Validation Behaviour
+
+The system shall handle invalid search and reservation input through a consistent validation path so that travellers receive predictable and meaningful failure responses.
+
+---
+
+## FR-021 Offer Selection Integrity
+
+The system shall bind reservation requests to a selected offer from the active search context or an equivalent captured offer snapshot rather than requiring the traveller to enter an offer identifier manually.
+
+---
+
+## FR-022 Clear Handling of Missing or Stale Offers
+
+The system shall return a clear validation or business-rule failure when a reservation request references an offer that is missing, stale, or no longer valid for the current search context.
+
+---
+
+## FR-023 Provider Stub Fidelity
+
+The system shall ensure stubbed provider data models real provider differences: PremierStays responses must use PascalCase JSON shapes and BudgetNests must use snake_case JSON shapes. Stub providers must expose destination-scoped data so results vary by searched city rather than returning the same global sample set.
+
+---
+
+## FR-024 API Integration Tests (WebApplicationFactory)
+
+The system shall include API integration tests that use `WebApplicationFactory` (or equivalent test host) to exercise `/hotels/search`, `/hotels/reserve`, and `/hotels/reservation/{reference}` end-to-end, including validation error paths and reservation lookup.
+
+---
+
+## FR-025 Frontend Lookup Component Tests
+
+The frontend shall include unit tests for the `LookupComponent` (or equivalent) to verify reservation lookup behaviour, error display for not-found references, and proper rendering of reservation data.
+
+---
+
+# 8. Business Rules
+
+- BR-001 Search results must be relevant to the supplied destination, stay dates, and optional room type.
+- BR-002 Rooms marked as unavailable by a provider must not be presented as available offers.
+- BR-003 Reservations must only be created for offers that are valid in the current booking context.
+- BR-004 A reservation must be associated with a confirmed offer snapshot so that booking confirmation remains stable even if catalog data changes later.
+- BR-005 Document validation must be based on the destination category and must reject invalid document combinations.
+- BR-006 The system must not allow a reservation to proceed when the selected offer cannot be resolved from the active booking context.
+
+---
+
+# 9. Validation Rules
+
+- VR-001 Destination, check-in date, and check-out date are mandatory for hotel search.
+- VR-002 Check-out date must be later than the check-in date.
+- VR-003 The submitted document type must be valid for the destination category.
+- VR-004 The selected offer must be identifiable and valid before a reservation is confirmed.
+- VR-005 Reservation requests that reference missing or stale offers must be rejected with a clear validation or business-rule message.
+
+---
+
+# 10. API Requirements
 
 ### Search Hotels
 
@@ -255,6 +330,98 @@ POST /hotels/reserve
 ### Reservation Lookup
 
 GET /hotels/reservation/{reference}
+
+The API must support request payloads that carry the selected offer context from the client without relying on manual offer entry or ambiguous state.
+
+---
+
+# 11. Assumptions
+
+- The solution remains offline and uses deterministic stub provider data.
+- The business scenario focuses on a single traveller booking flow rather than multi-user concurrent operations.
+- The destination-based document rules are limited to domestic and international categories as defined in the approved scope.
+
+---
+
+# 12. Constraints
+
+- No real hotel provider integrations are in scope.
+- No persistent database is in scope for the current case study.
+- No authentication, payment, or notification workflows are in scope.
+- Reservation and search behaviour must remain deterministic and reviewable in an offline environment.
+
+---
+
+# 13. Risks
+
+- Inconsistent destination scoping could lead to incorrect or misleading search results.
+- Weak offer-binding rules could create ambiguous or failed reservation attempts.
+- Provider-specific differences could be flattened incorrectly and reduce the usefulness of the integration model.
+- Validation inconsistencies could cause confusion for travellers and testing teams.
+
+ - Missing integration tests increase the risk of regressions in end-to-end flows.
+ - Absent frontend lookup tests may allow UI lookup regressions to go unnoticed.
+
+---
+
+# 14. Dependencies
+
+- Availability data from the stub providers.
+- Destination category rules for domestic and international validation.
+- Reservation and offer catalog state used during the booking flow.
+- Frontend state that preserves the selected offer from search results into reservation submission.
+
+---
+
+# 15. Acceptance Criteria
+
+- AC-001 A traveller searching for hotels in a specific destination receives only offers that are relevant to that destination.
+- AC-002 A reservation can be created only when the selected offer is valid and present in the current booking context.
+- AC-003 A reservation request that references a missing or stale offer is rejected with a clear validation or business-rule message.
+- AC-004 A traveller does not need to manually type an offer identifier to complete a reservation.
+- AC-005 Invalid document or reservation input is rejected consistently and with a meaningful message.
+
+ - AC-006 Provider stubs model provider-specific JSON shapes (PascalCase and snake_case) and return destination-scoped offers for different cities.
+ - AC-007 The API has integration tests that exercise search, reserve, and lookup flows via a test host (e.g. `WebApplicationFactory`) including error paths.
+ - AC-008 The frontend contains unit tests for the `LookupComponent` verifying successful lookup and not-found handling.
+ - AC-009 The reservation UX does not present a free-text "Selected offer ID" input; reservations must be created using an offer selected from search results or a captured offer snapshot.
+
+---
+
+# 16. Requirement Traceability Matrix
+
+| Requirement ID | Coverage |
+|---|---|
+| FR-001 to FR-017 | Covered by the core search, reservation, validation, and lookup flows defined in this analysis. |
+| FR-018 | Covered by destination-scoped search result behavior. |
+| FR-019 | Covered by provider-specific response handling and normalization expectations. |
+| FR-020 | Covered by consistent validation and error handling requirements. |
+| FR-021 | Covered by offer selection integrity and booking flow requirements. |
+| FR-022 | Covered by clear failure handling for missing or stale offers. |
+| FR-023 | Covered by provider stub fidelity and destination-scoped stub data requirements. |
+| FR-024 | Covered by API integration test requirements using a test host. |
+| FR-025 | Covered by frontend unit testing requirements for lookup behaviour. |
+
+---
+
+# 17. Glossary
+
+- Destination category: A business classification used to determine the appropriate document validation rule.
+- Hotel offer: A normalized room option that is returned to the traveller for review and booking.
+- Reservation reference: A unique identifier used to retrieve a confirmed reservation.
+- Selected offer: The offer chosen by the traveller from the search results and carried into the reservation workflow.
+
+---
+
+# 18. Open Questions
+
+- Should destination-scoped availability data be governed by provider-specific city lists or by a shared business catalog?
+- Should the booking flow require a stronger offer-binding mechanism than the current search-result context?
+- Should invalid or stale offer attempts be surfaced as validation errors, business-rule errors, or both?
+
+ - Should stub providers intentionally simulate different JSON casings (PascalCase/snake_case) and shape quirks, or should normalization be tested only at the mapper layer?
+ - Should an API-level 400/422 be returned for cold-start reservation attempts instead of an opaque "offer not found" business exception?
+ - Should the `LookupComponent` be the single UI surface for reservation retrieval testing, or should a shared service be tested instead to reduce UI coupling?
 
 ---
 

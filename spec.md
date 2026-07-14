@@ -196,6 +196,13 @@ The API design should remain aligned with the approved endpoints and support the
 - cancellationPolicy
 - reservationSnapshot
 
+Note: The reservation request MUST support two mutually-acceptable patterns to enable both standard and cold-start booking flows:
+
+- Pattern A: `SelectedOfferId` — the client supplies an `selectedOfferId` that the server resolves against the server-side `IOfferCatalog` populated by a prior search.
+- Pattern B: `OfferSnapshot` — the client supplies a full `HotelOffer` snapshot (the normalized DTO). This enables cold-start reservations (deep links/bookmarks) when no prior search was performed. The server MUST validate the supplied snapshot before creating a reservation and persist the snapshot with the reservation record.
+
+If neither `SelectedOfferId` nor a valid `OfferSnapshot` is provided the server MUST return a `400 INVALID_REQUEST` response indicating the missing selection.
+
 ### 6.3 Retrieve Reservation
 
 | Item | Detail |
@@ -223,6 +230,14 @@ The API design should remain aligned with the approved endpoints and support the
 - Invalid document type for the destination category shall be rejected with 422.
 - Validation failures must return a clear, meaningful message.
 
+Error mapping guidance:
+
+- `400 INVALID_REQUEST` — request shape problems, missing required fields, invalid date ordering, or missing offer selection when neither `SelectedOfferId` nor `OfferSnapshot` is provided.
+- `422 BUSINESS_RULE_VIOLATION` — domain-level validation failures such as document incompatibility for the destination, or other business rules preventing reservation creation.
+- `404 NOT_FOUND` — reservation lookup misses.
+
+API implementers should map specific domain exceptions to these statuses (for example, an `InvalidRequestException` -> 400, a `BusinessRuleException` -> 422) to ensure consistent client semantics.
+
 ## 7. Provider Integration Design
 
 ### 7.1 Provider Abstraction
@@ -235,6 +250,8 @@ The solution will define a provider abstraction that allows multiple hotel provi
 | --- | --- | --- | --- |
 | PremierStays | PascalCase JSON | Always returns available rooms | FreeCancellation up to 48 hours before check-in, or NonRefundable |
 | BudgetNests | snake_case JSON | May return unavailable rooms; filter out rooms with `available: false` | Flexible up to 24 hours before check-in, or NonRefundable |
+
+Implementation note: Provider adapters must faithfully present provider-specific payloads; dedicated mapper classes (`PremierStaysMapper`, `BudgetNestsMapper`) are required to normalize PascalCase and snake_case shapes into the shared `ProviderResult`/`HotelOffer` model. Mappers should also canonicalize string fields such as `RoomTypeCode` and `Destination` to a normalized form used by domain rules.
 
 ### 7.2a Destination Category Constraints
 
@@ -254,9 +271,27 @@ The solution will define a provider abstraction that allows multiple hotel provi
 - The normalization layer will be responsible for translation and not for business decision-making beyond mapping the provider response into the shared model.
 - Mapping and normalization should be handled by dedicated mapper classes or adapters rather than embedded directly within orchestration services.
 
+Implementation guidance:
+
+- `PremierStaysMapper` should parse PascalCase JSON fields (e.g., `RoomTypeCode`, `PerNightRate`) and produce a `ProviderHotelOffer` with normalized casing and canonical `RoomType` mapping.
+- `BudgetNestsMapper` should parse snake_case fields (e.g., `room_type`, `per_night_rate`) and normalize them similarly.
+- Mapper unit tests MUST provide representative PascalCase and snake_case payloads and assert deterministic normalization to the shared model.
+
 ### 7.4 Future Provider Extension
 
 A new provider can be introduced by implementing the same provider contract and supplying its mapping rules. The search workflow, reservation workflow, and UI experience should continue to work without requiring changes to the core traveller journey.
+
+### 7.5 OfferSnapshot and IOfferCatalog
+
+- `IOfferCatalog` responsibilities:
+  - Store normalized `HotelOffer` results from searches keyed by `offerId`.
+  - Provide `GetAsync(offerId)` lookup used during reservation flow when the client supplies `SelectedOfferId`.
+  - Optionally support snapshot TTL/expiration for real-world scenarios (out of scope for the case study).
+
+- `OfferSnapshot` guidance:
+  - The API should accept a full `OfferSnapshot` (a normalized `HotelOfferDto`) as part of the `ReserveHotelRequest` to enable cold-start reservations.
+  - The server MUST validate the snapshot (roomType canonicalization, price sanity check relative to stay dates, provider identity) before accepting it and persisting it as part of the `Reservation` record.
+  - When `SelectedOfferId` is provided, the server should prefer resolving from `IOfferCatalog` and only accept a client-supplied snapshot when `SelectedOfferId` is missing.
 
 ## 8. Validation Strategy
 
@@ -389,6 +424,8 @@ Expected behaviour:
 - Server-side validation must re-check the document requirement before allowing reservation creation.
 - The reservation screen should communicate submission progress and surface validation feedback clearly while preserving the current form values.
 
+UI detail: The reservation screen MUST display the selected offer as read-only, sourced from a shared state service (for example, `HotelStateService.selectedOffer$`). The UI MUST NOT expose a free-text `SelectedOfferId` input. When deep-linking or cold-start flows are required, the client may include an `OfferSnapshot` in the reservation request rather than a typed ID.
+
 ### 10.4 Confirmation Screen
 
 Purpose:
@@ -434,6 +471,11 @@ The testing strategy should verify that the business behaviour and required work
 - Reservation lookup workflow
 - Error response behaviour for invalid input and validation failure
 - End-to-end HTTP testing using WebApplicationFactory for the API layer
+
+Additional required tests:
+
+- Mapper unit tests: Provide focused unit tests for `PremierStaysMapper` and `BudgetNestsMapper` that supply representative PascalCase and snake_case payloads and assert deterministic normalization to the shared `ProviderHotelOffer`/`HotelOffer` model.
+- Cold-start reservation integration tests: Use WebApplicationFactory to exercise reservation flows where the client submits an `OfferSnapshot` (expect success and persisted snapshot) and negative cases where neither `SelectedOfferId` nor `OfferSnapshot` is supplied (expect `400 INVALID_REQUEST`).
 
 ### 11.3 UI Testing Scope
 

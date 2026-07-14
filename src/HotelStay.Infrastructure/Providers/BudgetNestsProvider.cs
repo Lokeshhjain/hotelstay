@@ -22,7 +22,10 @@ public sealed class BudgetNestsProvider : IHotelProvider
     {
         var destinationCategory = HotelBusinessRules.DetermineDestinationCategory(criteria.Destination, _dataContext.DomesticCities, _dataContext.InternationalCities);
         
+        var searchDestination = (criteria.Destination ?? string.Empty).Trim();
+
         var mappedOffers = _dataContext.BudgetNestsOffers
+            .Where(offer => offer.Destination.Equals(searchDestination, StringComparison.OrdinalIgnoreCase))
             .Where(offer => MatchesRoomType(offer, criteria.RoomType))
             .Select(offer => _mapper.Map(offer, criteria))
             .OrderBy(offer => GetDestinationSortKey(offer, criteria.Destination))

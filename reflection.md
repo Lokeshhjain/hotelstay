@@ -22,14 +22,14 @@ That would:
 - make reservations easier to reason about
 - avoid coupling reservation creation to a search re-run
 
-## 3. Replace Window-Based UI Communication
+## 3. Centralize UI State Management
 
-The Angular UI currently uses custom browser events to share state between components.
+The Angular UI now uses a shared `HotelStateService` with `BehaviorSubject` observables to coordinate state across components.
 
-With more time, I would replace that with:
-- a shared service
-- Angular signals
-- or a small component store pattern
+With more time, I would continue to refine this by:
+- strengthening the shared state APIs
+- considering Angular signals for more declarative state handling
+- potentially evolving toward a small component store pattern
 
 That would make the UI easier to maintain and test.
 
@@ -126,7 +126,7 @@ These suggestions were accepted because they directly matched the approved speci
 
 - Some early test guidance produced overly strict frontend expectations for exact object equality and fixed dates. These were corrected to use dynamically generated future dates and more resilient validation of returned offer fields.
 - Design ideas that implied adding authentication, payment processing, or external provider access were rejected because they fell outside the documented scope and constraints.
-- UI state recommendations that would require a large refactor of the current event-based component coordination were deferred to future work, keeping the current implementation within scope while still noting the right architecture target.
+- UI state recommendations that would require a large refactor of the current component coordination were deferred to future work, while the current `HotelStateService` shared state approach keeps the implementation cohesive.
 
 Those corrections were made to preserve the case study's current scope and to avoid introducing speculative functionality not supported by the requirement analysis.
 
@@ -154,5 +154,5 @@ The reusable prompt files in `.github/prompts/` improved consistency across the 
 - Keeping prompt documentation up to date is important; the new `prompts.md` entry now captures prompt intent and execution history.
 - Reusable prompt artifacts are valuable for maintaining consistent guidance across multiple development phases.
 - The case study would benefit from a stronger separation of client validation, application validation, and domain rules.
-- A future iteration should convert the UI to reactive forms and replace event-based state coordination with a shared service or signal-based pattern.
+- A future iteration should convert the UI to reactive forms and continue refining the shared state service or a signal-based pattern.
 - More API integration tests would increase confidence in the end-to-end flow while preserving the offline case study constraints.

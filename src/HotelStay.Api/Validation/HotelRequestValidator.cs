@@ -69,7 +69,52 @@ public static class HotelRequestValidator
 
         if (string.IsNullOrWhiteSpace(request.SelectedOfferId))
         {
-            errors.Add("Selected offer ID is required.");
+            if (request.OfferSnapshot is null)
+            {
+                errors.Add("Selected offer ID or offer snapshot is required.");
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(request.OfferSnapshot.Id))
+                {
+                    errors.Add("Offer snapshot ID is required.");
+                }
+
+                if (string.IsNullOrWhiteSpace(request.OfferSnapshot.Provider))
+                {
+                    errors.Add("Offer snapshot provider is required.");
+                }
+
+                if (request.OfferSnapshot.PerNightRate <= 0)
+                {
+                    errors.Add("Offer snapshot per-night rate must be greater than zero.");
+                }
+
+                if (request.OfferSnapshot.TotalStayPrice <= 0)
+                {
+                    errors.Add("Offer snapshot total stay price must be greater than zero.");
+                }
+
+                if (!Enum.TryParse<RoomType>(request.OfferSnapshot.RoomType, true, out _))
+                {
+                    errors.Add("Offer snapshot room type is invalid.");
+                }
+
+                if (!Enum.TryParse<CancellationPolicy>(request.OfferSnapshot.CancellationPolicy, true, out _))
+                {
+                    errors.Add("Offer snapshot cancellation policy is invalid.");
+                }
+
+                if (request.OfferSnapshot.CancellationWindowHoursBeforeCheckIn < 0)
+                {
+                    errors.Add("Offer snapshot cancellation window must be zero or positive.");
+                }
+            }
+        }
+        else if (request.OfferSnapshot is not null &&
+                 !string.Equals(request.SelectedOfferId, request.OfferSnapshot.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            errors.Add("Selected offer ID and offer snapshot ID must match.");
         }
 
         return errors;

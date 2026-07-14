@@ -222,7 +222,7 @@ public sealed class DuplicateReservationPreventionTests
             "London",
             DocumentType.Passport,
             "PASSPORT-123",
-            "premier-1"));
+            "premier-london-1"));
 
         Assert.Equal("Document accepted.", reservation.ValidationOutcome);
         Assert.NotNull(reservation.ReservationReference.Value);

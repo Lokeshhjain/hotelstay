@@ -34,9 +34,10 @@
       <div class="invalid-feedback d-block" *ngIf="submitted && form.get('documentNumber')?.hasError('required')">Document number is required.</div>
     </div>
     <div class="col-12">
-      <label class="form-label fw-semibold">Selected offer ID</label>
-      <input class="form-control focus-ring" formControlName="selectedOfferId" placeholder="Choose a result to auto-fill this" />
-      <div class="invalid-feedback d-block" *ngIf="submitted && form.get('selectedOfferId')?.hasError('required')">Selected offer ID is required.</div>
+      <label class="form-label fw-semibold">Selected offer</label>
+      <div class="form-control-plaintext">
+        {{ currentSelectedOffer?.id || 'No offer selected' }} — {{ currentSelectedOffer?.provider || '' }}
+      </div>
     </div>
     <div class="col-12 d-grid d-md-flex justify-content-md-end">
       <button class="btn btn-dark px-4" type="submit" [disabled]="isSubmitting">{{ isSubmitting ? 'Reserving…' : 'Reserve now' }}</button>

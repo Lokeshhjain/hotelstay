@@ -134,6 +134,22 @@ public sealed class SearchWorkflowBoundaryTests
     }
 
     [Fact]
+    public async Task SearchHotelsAsync_DifferentDestinationsReturnDistinctStubData()
+    {
+        var service = CreateService();
+
+        var delhiOffers = await service.SearchHotelsAsync(new SearchCriteria("Delhi", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), null));
+        var bengaluruOffers = await service.SearchHotelsAsync(new SearchCriteria("Bengaluru", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), null));
+        var londonOffers = await service.SearchHotelsAsync(new SearchCriteria("London", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), null));
+        var parisOffers = await service.SearchHotelsAsync(new SearchCriteria("Paris", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), null));
+
+        Assert.DoesNotContain(bengaluruOffers, offer => offer.Id.StartsWith("premier-delhi") || offer.Id.StartsWith("budget-delhi") || offer.Id.StartsWith("premier-mumbai") || offer.Id.StartsWith("budget-mumbai"));
+        Assert.DoesNotContain(londonOffers, offer => offer.Id.StartsWith("premier-delhi") || offer.Id.StartsWith("budget-delhi") || offer.Id.StartsWith("premier-mumbai") || offer.Id.StartsWith("budget-mumbai") || offer.Id.StartsWith("premier-bengaluru") || offer.Id.StartsWith("budget-bengaluru"));
+        Assert.DoesNotContain(parisOffers, offer => offer.Id.StartsWith("premier-delhi") || offer.Id.StartsWith("budget-delhi") || offer.Id.StartsWith("premier-mumbai") || offer.Id.StartsWith("budget-mumbai") || offer.Id.StartsWith("premier-bengaluru") || offer.Id.StartsWith("budget-bengaluru") || offer.Id.StartsWith("premier-london") || offer.Id.StartsWith("budget-london"));
+        Assert.DoesNotContain(delhiOffers, offer => offer.Id.StartsWith("premier-london") || offer.Id.StartsWith("budget-london") || offer.Id.StartsWith("premier-paris") || offer.Id.StartsWith("budget-paris") || offer.Id.StartsWith("premier-tokyo") || offer.Id.StartsWith("budget-tokyo"));
+    }
+
+    [Fact]
     public async Task SearchHotelsAsync_WithWhitespaceTrimmedFromDestination()
     {
         var service = CreateService();
@@ -250,7 +266,7 @@ public sealed class SearchWorkflowBoundaryTests
     {
         var service = CreateService();
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+        var exception = await Assert.ThrowsAsync<HotelStay.Application.Exceptions.InvalidRequestException>(() =>
             service.SearchHotelsAsync(new SearchCriteria("Delhi", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), "penthouse")));
 
         Assert.Contains("Room type must be Standard, Deluxe, or Suite.", exception.Message);

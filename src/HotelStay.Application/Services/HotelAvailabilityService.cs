@@ -28,7 +28,7 @@ public sealed class HotelAvailabilityService : IHotelAvailabilityService
 
         if (!hasRequestedRoomType)
         {
-            throw new ArgumentException("Room type must be Standard, Deluxe, or Suite.", nameof(criteria));
+            throw new HotelStay.Application.Exceptions.InvalidRequestException("Room type must be Standard, Deluxe, or Suite.");
         }
 
         var offers = new List<HotelOffer>();
@@ -64,11 +64,21 @@ public sealed class HotelAvailabilityService : IHotelAvailabilityService
             throw new InvalidOperationException(validation.Message);
         }
 
-        var selectedOffer = await _offerCatalog.GetAsync(request.SelectedOfferId, cancellationToken);
+        HotelOffer? selectedOffer = null;
+
+        if (!string.IsNullOrWhiteSpace(request.SelectedOfferId))
+        {
+            selectedOffer = await _offerCatalog.GetAsync(request.SelectedOfferId, cancellationToken);
+        }
+
+        if (selectedOffer is null && request.OfferSnapshot is not null)
+        {
+            selectedOffer = request.OfferSnapshot;
+        }
 
         if (selectedOffer is null)
         {
-            throw new InvalidOperationException("The selected offer could not be found.");
+            throw new HotelStay.Application.Exceptions.InvalidRequestException("The selected offer could not be found. Provide a valid SelectedOfferId or an OfferSnapshot.");
         }
 
         // Check if this offer has already been reserved

@@ -1,6 +1,7 @@
 using HotelStay.Api.Contracts;
 using HotelStay.Api.Validation;
 using HotelStay.Application.Contracts;
+using HotelStay.Domain.Entities;
 using HotelStay.Domain.Enums;
 using HotelStay.Domain.ValueObjects;
 
@@ -21,17 +22,24 @@ public static class HotelRoutes
             }
 
             var criteria = new SearchCriteria(destination!, checkIn!.Value, checkOut!.Value, roomType);
-            var offers = await service.SearchHotelsAsync(criteria, cancellationToken);
+            try
+            {
+                var offers = await service.SearchHotelsAsync(criteria, cancellationToken);
 
-            return Results.Ok(new SearchHotelsResponse(
-                offers.Select(offer => new HotelOfferDto(
-                    offer.Id,
-                    offer.Provider,
-                    offer.RoomType.ToString(),
-                    offer.PerNightRate,
-                    offer.TotalStayPrice,
-                    offer.CancellationPolicy.ToString(),
-                    offer.CancellationWindowHoursBeforeCheckIn)).ToList()));
+                return Results.Ok(new SearchHotelsResponse(
+                    offers.Select(offer => new HotelOfferDto(
+                        offer.Id,
+                        offer.Provider,
+                        offer.RoomType.ToString(),
+                        offer.PerNightRate,
+                        offer.TotalStayPrice,
+                        offer.CancellationPolicy.ToString(),
+                        offer.CancellationWindowHoursBeforeCheckIn)).ToList()));
+            }
+            catch (HotelStay.Application.Exceptions.InvalidRequestException ex)
+            {
+                return Results.BadRequest(new ApiErrorResponse("INVALID_REQUEST", ex.Message, new[] { ex.Message }));
+            }
         });
 
         app.MapPost("/hotels/reserve", async (ReserveHotelRequest request, IHotelAvailabilityService service, CancellationToken cancellationToken) =>
@@ -49,6 +57,28 @@ public static class HotelRoutes
                 return Results.BadRequest(new ApiErrorResponse("INVALID_REQUEST", "Reservation request validation failed.", new[] { "Document type is invalid." }));
             }
 
+            HotelOffer? offerSnapshot = null;
+            if (request.OfferSnapshot is not null)
+            {
+                if (!Enum.TryParse<RoomType>(request.OfferSnapshot.RoomType, true, out var roomType) ||
+                    !Enum.TryParse<CancellationPolicy>(request.OfferSnapshot.CancellationPolicy, true, out var cancellationPolicy))
+                {
+                    return Results.BadRequest(new ApiErrorResponse("INVALID_REQUEST", "Offer snapshot contains invalid values.", new[] { "Offer snapshot contains invalid values." }));
+                }
+
+                offerSnapshot = new HotelOffer
+                {
+                    Id = request.OfferSnapshot.Id,
+                    Provider = request.OfferSnapshot.Provider,
+                    RoomType = roomType,
+                    PerNightRate = request.OfferSnapshot.PerNightRate,
+                    TotalStayPrice = request.OfferSnapshot.TotalStayPrice,
+                    CancellationPolicy = cancellationPolicy,
+                    CancellationWindowHoursBeforeCheckIn = request.OfferSnapshot.CancellationWindowHoursBeforeCheckIn,
+                    IsAvailable = true
+                };
+            }
+
             try
             {
                 var reservationRequest = new ReservationRequest(
@@ -56,23 +86,39 @@ public static class HotelRoutes
                     request.Destination!,
                     documentType,
                     request.DocumentNumber!,
-                    request.SelectedOfferId!);
+                    request.SelectedOfferId,
+                    offerSnapshot);
 
-                var reservation = await service.ReserveHotelAsync(reservationRequest, cancellationToken);
+                try
+                {
+                    var reservation = await service.ReserveHotelAsync(reservationRequest, cancellationToken);
 
-                return Results.Ok(new ReservationDto(
-                    reservation.ReservationReference.Value,
-                    reservation.Provider,
-                    reservation.TotalPrice,
-                    reservation.CancellationPolicy.ToString(),
-                    reservation.OfferSnapshot is null ? null : new HotelOfferDto(
-                        reservation.OfferSnapshot.Id,
-                        reservation.OfferSnapshot.Provider,
-                        reservation.OfferSnapshot.RoomType.ToString(),
-                        reservation.OfferSnapshot.PerNightRate,
-                        reservation.OfferSnapshot.TotalStayPrice,
-                        reservation.OfferSnapshot.CancellationPolicy.ToString(),
-                        reservation.OfferSnapshot.CancellationWindowHoursBeforeCheckIn)));
+                    return Results.Ok(new ReservationDto(
+                        reservation.ReservationReference.Value,
+                        reservation.Provider,
+                        reservation.TotalPrice,
+                        reservation.CancellationPolicy.ToString(),
+                        reservation.OfferSnapshot is null ? null : new HotelOfferDto(
+                            reservation.OfferSnapshot.Id,
+                            reservation.OfferSnapshot.Provider,
+                            reservation.OfferSnapshot.RoomType.ToString(),
+                            reservation.OfferSnapshot.PerNightRate,
+                            reservation.OfferSnapshot.TotalStayPrice,
+                            reservation.OfferSnapshot.CancellationPolicy.ToString(),
+                            reservation.OfferSnapshot.CancellationWindowHoursBeforeCheckIn)));
+                }
+                catch (HotelStay.Application.Exceptions.InvalidRequestException ex)
+                {
+                    return Results.BadRequest(new ApiErrorResponse("INVALID_REQUEST", ex.Message, new[] { ex.Message }));
+                }
+                catch (InvalidOperationException ex) when (ex.Message.Contains("could not be found", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Results.BadRequest(new ApiErrorResponse("INVALID_REQUEST", "Selected offer not found or stale. Perform a search and select an offer before reserving.", new[] { ex.Message }));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.UnprocessableEntity(new ApiErrorResponse("BUSINESS_RULE_VIOLATION", ex.Message, new[] { ex.Message }));
+                }
             }
             catch (InvalidOperationException ex)
             {

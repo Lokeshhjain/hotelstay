@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { HotelStateService } from '../../services/hotel-state.service';
-import { DocumentValidationService, DocumentType } from '../../services/document-validation.service';
+import { DocumentValidationService } from '../../services/document-validation.service';
+import type { DocumentType } from '../../services/document-validation.service';
 
 @Component({
   standalone: true,
@@ -21,6 +22,7 @@ export class ReservationComponent implements OnInit {
   validationMessage = '';
   requiredDocumentType: DocumentType | null = null;
   availableDocumentTypes: DocumentType[] = ['NationalId', 'Passport'];
+  currentSelectedOffer: any | null = null;
 
   constructor(
     private readonly api: ApiService,
@@ -33,17 +35,14 @@ export class ReservationComponent implements OnInit {
       destination: ['', Validators.required],
       documentType: ['Passport', Validators.required],
       documentNumber: ['', Validators.required],
-      selectedOfferId: ['', Validators.required]
     });
   }
 
   ngOnInit(): void {
     this.state.selectedOffer$.subscribe((offer) => {
+      this.currentSelectedOffer = offer;
       if (offer) {
-        this.form.patchValue({
-          selectedOfferId: offer.id,
-          destination: this.form.get('destination')?.value || ''
-        });
+        this.form.patchValue({ destination: this.form.get('destination')?.value || '' });
       }
     });
 
@@ -123,7 +122,15 @@ export class ReservationComponent implements OnInit {
 
     // Submit the reservation
     this.isSubmitting = true;
-    const payload = this.form.value;
+    const payload: any = this.form.value;
+
+    if (!this.currentSelectedOffer) {
+      this.isSubmitting = false;
+      this.validationMessage = 'Please select an offer from search results before reserving.';
+      return;
+    }
+
+    payload.selectedOfferId = this.currentSelectedOffer.id;
 
     this.api.reserve(payload).subscribe({
       next: (res: any) => {
@@ -137,7 +144,24 @@ export class ReservationComponent implements OnInit {
           cancellationPolicy: res.cancellationPolicy,
           cancellationWindowHoursBeforeCheckIn: res.offerSnapshot?.cancellationWindowHoursBeforeCheckIn
         });
+
+        if (this.currentSelectedOffer?.id) {
+          this.state.removeOfferFromResults(this.currentSelectedOffer.id);
+        }
+
         this.state.clearSelection();
+        this.currentSelectedOffer = null;
+        this.form.reset({
+          travellerName: '',
+          destination: '',
+          documentType: 'Passport',
+          documentNumber: ''
+        });
+        this.form.markAsPristine();
+        this.form.markAsUntouched();
+        this.submitted = false;
+        this.message = '';
+        this.validationMessage = '';
       },
       error: (err) => {
         this.isSubmitting = false;

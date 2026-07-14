@@ -91,7 +91,7 @@ public sealed class HotelAvailabilityServiceTests
     {
         var service = CreateService();
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+        var exception = await Assert.ThrowsAsync<HotelStay.Application.Exceptions.InvalidRequestException>(() =>
             service.SearchHotelsAsync(new SearchCriteria("Delhi", new DateOnly(2026, 7, 11), new DateOnly(2026, 7, 14), "penthouse")));
 
         Assert.Contains("Room type must be Standard, Deluxe, or Suite.", exception.Message);
