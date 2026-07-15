@@ -8,9 +8,9 @@ namespace HotelStay.Infrastructure.Providers;
 public sealed class BudgetNestsProvider : IHotelProvider
 {
     private readonly InMemoryDataContext _dataContext;
-    private readonly IProviderOfferMapper _mapper;
+    private readonly IProviderOfferMapper<BudgetNestsOfferResponse> _mapper;
 
-    public BudgetNestsProvider(InMemoryDataContext dataContext, IEnumerable<IProviderOfferMapper> mappers)
+    public BudgetNestsProvider(InMemoryDataContext dataContext, IEnumerable<IProviderOfferMapper<BudgetNestsOfferResponse>> mappers)
     {
         _dataContext = dataContext;
         _mapper = mappers.Single(x => x.ProviderName == Name);
@@ -25,7 +25,7 @@ public sealed class BudgetNestsProvider : IHotelProvider
         var searchDestination = (criteria.Destination ?? string.Empty).Trim();
 
         var mappedOffers = _dataContext.BudgetNestsOffers
-            .Where(offer => offer.Destination.Equals(searchDestination, StringComparison.OrdinalIgnoreCase))
+            .Where(offer => offer.destination.Equals(searchDestination, StringComparison.OrdinalIgnoreCase))
             .Where(offer => MatchesRoomType(offer, criteria.RoomType))
             .Select(offer => _mapper.Map(offer, criteria))
             .OrderBy(offer => GetDestinationSortKey(offer, criteria.Destination))
@@ -34,14 +34,14 @@ public sealed class BudgetNestsProvider : IHotelProvider
         return Task.FromResult<IReadOnlyCollection<ProviderHotelOffer>>(mappedOffers);
     }
 
-    private static bool MatchesRoomType(ProviderHotelOffer offer, string? roomType)
+    private static bool MatchesRoomType(BudgetNestsOfferResponse offer, string? roomType)
     {
         if (string.IsNullOrWhiteSpace(roomType))
         {
             return true;
         }
 
-        return offer.RoomTypeCode.Equals(roomType.Trim(), StringComparison.OrdinalIgnoreCase);
+        return offer.room_type_code.Equals(roomType.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
     private static int GetDestinationSortKey(ProviderHotelOffer offer, string? destination)

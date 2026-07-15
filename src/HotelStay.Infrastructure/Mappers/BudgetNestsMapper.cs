@@ -1,20 +1,25 @@
 using HotelStay.Application.Models;
+using HotelStay.Domain.Enums;
 using HotelStay.Domain.ValueObjects;
 
 namespace HotelStay.Infrastructure.Mappers;
 
-public sealed class BudgetNestsMapper : IProviderOfferMapper
+public sealed class BudgetNestsMapper : IProviderOfferMapper<BudgetNestsOfferResponse>
 {
     public string ProviderName => "BudgetNests";
 
-    public ProviderHotelOffer Map(ProviderHotelOffer source, SearchCriteria criteria)
+    public ProviderHotelOffer Map(BudgetNestsOfferResponse source, SearchCriteria criteria)
     {
-        // Simulate provider-specific mapping differences (snake_case-style source)
-        // Normalize provider name and map room type code to the unified format
-        return source with
-        {
-            ProviderName = ProviderName,
-            RoomTypeCode = source.RoomTypeCode?.ToLowerInvariant() ?? source.RoomTypeCode
-        };
+        Enum.TryParse<CancellationPolicy>(source.cancellation_policy, true, out var cancellationPolicy);
+
+        return new ProviderHotelOffer(
+            source.offer_id,
+            source.provider_name,
+            source.room_type_code,
+            source.per_night_rate,
+            cancellationPolicy,
+            source.is_available,
+            source.cancellation_window_hours_before_check_in,
+            source.destination);
     }
 }

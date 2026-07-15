@@ -115,9 +115,8 @@ public sealed class HotelAvailabilityServiceTests
     public async Task BudgetNestsProvider_SearchAsync_FiltersByRequestedRoomType()
     {
         var dataContext = new InMemoryDataContext();
-        var provider = new BudgetNestsProvider(dataContext, new IProviderOfferMapper[]
+        var provider = new BudgetNestsProvider(dataContext, new IProviderOfferMapper<BudgetNestsOfferResponse>[]
         {
-            new PremierStaysMapper(),
             new BudgetNestsMapper()
         });
 
@@ -210,16 +209,20 @@ public sealed class HotelAvailabilityServiceTests
         var destinationSource = new DestinationCategorySource(dataContext);
         var documentValidationService = new HotelDocumentValidationService(destinationSource);
         var offerCatalog = new InMemoryOfferCatalog();
-        var mappers = new IProviderOfferMapper[]
+        var premierMappers = new IProviderOfferMapper<PremierStaysOfferResponse>[]
         {
             new PremierStaysMapper(),
+        };
+
+        var budgetMappers = new IProviderOfferMapper<BudgetNestsOfferResponse>[]
+        {
             new BudgetNestsMapper()
         };
 
         var providers = new IHotelProvider[]
         {
-            new PremierStaysProvider(dataContext, mappers),
-            new BudgetNestsProvider(dataContext, mappers)
+            new PremierStaysProvider(dataContext, premierMappers),
+            new BudgetNestsProvider(dataContext, budgetMappers)
         };
 
         return new HotelAvailabilityService(providers, reservationStore ?? new InMemoryReservationStore(), documentValidationService, offerCatalog);

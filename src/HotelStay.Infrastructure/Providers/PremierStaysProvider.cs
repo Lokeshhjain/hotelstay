@@ -8,9 +8,9 @@ namespace HotelStay.Infrastructure.Providers;
 public sealed class PremierStaysProvider : IHotelProvider
 {
     private readonly InMemoryDataContext _dataContext;
-    private readonly IProviderOfferMapper _mapper;
+    private readonly IProviderOfferMapper<PremierStaysOfferResponse> _mapper;
 
-    public PremierStaysProvider(InMemoryDataContext dataContext, IEnumerable<IProviderOfferMapper> mappers)
+    public PremierStaysProvider(InMemoryDataContext dataContext, IEnumerable<IProviderOfferMapper<PremierStaysOfferResponse>> mappers)
     {
         _dataContext = dataContext;
         _mapper = mappers.Single(x => x.ProviderName == Name);
@@ -34,7 +34,7 @@ public sealed class PremierStaysProvider : IHotelProvider
         return Task.FromResult<IReadOnlyCollection<ProviderHotelOffer>>(mappedOffers);
     }
 
-    private static bool MatchesRoomType(ProviderHotelOffer offer, string? roomType)
+    private static bool MatchesRoomType(PremierStaysOfferResponse offer, string? roomType)
     {
         if (string.IsNullOrWhiteSpace(roomType))
         {

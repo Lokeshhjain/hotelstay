@@ -1,11 +1,8 @@
-using HotelStay.Application.Models;
-using HotelStay.Domain.ValueObjects;
-
 namespace HotelStay.Infrastructure.Mappers;
 
-public interface IProviderOfferMapper
+public interface IProviderOfferMapper<in TSource>
 {
     string ProviderName { get; }
 
-    ProviderHotelOffer Map(ProviderHotelOffer source, SearchCriteria criteria);
+    HotelStay.Application.Models.ProviderHotelOffer Map(TSource source, HotelStay.Domain.ValueObjects.SearchCriteria criteria);
 }

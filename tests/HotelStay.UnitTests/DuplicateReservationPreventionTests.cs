@@ -285,14 +285,12 @@ public sealed class DuplicateReservationPreventionTests
         var dataContext = new InMemoryDataContext();
         var providers = new IHotelProvider[]
         {
-            new PremierStaysProvider(dataContext, new IProviderOfferMapper[]
+            new PremierStaysProvider(dataContext, new IProviderOfferMapper<PremierStaysOfferResponse>[]
             {
-                new PremierStaysMapper(),
-                new BudgetNestsMapper()
+                new PremierStaysMapper()
             }),
-            new BudgetNestsProvider(dataContext, new IProviderOfferMapper[]
+            new BudgetNestsProvider(dataContext, new IProviderOfferMapper<BudgetNestsOfferResponse>[]
             {
-                new PremierStaysMapper(),
                 new BudgetNestsMapper()
             })
         };
